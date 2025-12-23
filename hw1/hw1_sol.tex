@@ -43,8 +43,34 @@ Lastly, we will prove that the algorithm runs in polynomial time. The algorithm 
 
 Now we will prove that the algorithm is a 2-approximation. Let $M^*$ be an optimal maximal matching of $G$. We will show that $|M| \leq 2|M^*|$ by showing that for every one or two edges in $M$, there is at least one edge in $M^*$ that is unique to these edges. Consider an arbitrary edge $e^* = (u, v) \in M^*$ If $e^*\in M$ we will match it to its incident in $M$. if $e^* \notin M$ there can be at most two edges in $M$ that are adjacent to $e^*$ (one adjacent to $u$ and one adjacent to $v$). if there are adjacent edges from $M$, we will match these one or two edges $e^*$, there is also uniqueness due to the fact that in a matching, no two edges share an endpoint. 
 Every edge or two edges in $M$ is matched to a unique edge in $M^*$, since if an edge in $M$ was not matched to an edge in $M^*$, it means that this edge was not in or adjacent to any edge in $M^*$, and thus $M^*$ is not maximal, which is a contradiction. 
-
+\newpage
 \section{Question 2}
+We will construct a bipartite graph \(G = (L\cup R, E)\) as following. 
+L consists of k vertices, such that \( |L| = k\).
+For R we split the vertices into disjoint sets, such that each set consists of \(\lfloor \frac{k}{i} \rfloor\) vertices where \(i = 2, 3, \dots, k\). In each set \(S_i\) , every vertex in that set has exactly \(k \div \lfloor \frac{k}{i} \rfloor\) neighbors in \(L\) , such that, each vertex in \(L\) has exactly one neighbor from \(S_i\).(when \(\lfloor \frac{k}{i} \rfloor\in \mathbb{N} \) each vertex in \(S_i\) will have \(i\) neighbors).
+\\\\ 
+\textbf{The Algorithm} \\
+After construction each vertex in L will have a degree of exactly \(k-1\)
+and in \(R\) each vertex in \(S_i\) will have degree \(i\) or higher.
+\\
+Therefore, the algorithm will choose in the first step all vertices from \(S_k\) (The vertex in \(S_k\) has degree k). This will result in vertices in \(L\) having degree \(k-2\). On the next step vertices from \(S_{k-1}\) will be choosen because they have degree \(k-1\) and so on. In general for step \(j\) vertices from  \(S_{k-j-1}\) will be chosen because vertices in \(L\) will have a degree of \(k - j - 2\).
+This will continue until \(R\) is empty, therefore the algorithm will choose all the vertices from \(R\) as the vertex cover.
+\\\\
+In total we get a lower bound for the number of vertices the algorithm chooses
+
+\[\sum_{i=2}^{k} \left\lfloor \frac{k}{i} \right\rfloor
+\ge \sum_{i=1}^{k} \left( \frac{k}{i} - 1 \right) - k = 
+k\sum_{i=1}^{k} \frac{1}{i} - 2k \ge klogk - 2k
+\]
+
+The optimal vertex cover is to choose all vertices in \(L\), Therefore \(|OPT|=k\)
+
+In total we get that the approximation ratio is:
+\[
+\frac{klogk -2k}{k} \in \Omega(\log(k))
+\]
+
+note that \(n \in \Theta(k\log(k))\) (n is the number of vertices), Therefore \(\log(n) \in \Omega(\log(k\log(k))) = \Omega(\log(k) + \log(\log(k))) = \Omega(\log(k)) \)
 
 \section{Question 3}
 \subsection{Tightness of the approximation}
@@ -144,7 +170,55 @@ $$y_k \geq y_{k-1}(1 - \frac{1}{k}) + \frac{OPT}{k} \geq y_{k-2}(1 - \frac{1}{k}
 $$ y_{k-i}(1 - \frac{1}{k})^i + \frac{OPT}{k} \sum_{j=0}^{i-1} (1 - \frac{1}{k})^j \geq \ldots \geq y_0(1 - \frac{1}{k})^k + \frac{OPT}{k} \sum_{j=0}^{k-1} (1 - \frac{1}{k})^j $$
 $$= \frac{OPT}{k} \sum_{j=0}^{k-1} (1 - \frac{1}{k})^j = \frac{OPT}{k}\frac{1 - (1 - \frac{1}{k})^k}{1 - (1 - \frac{1}{k})} = OPT(1 - (1 - \frac{1}{k})^k)$$
 thus we have shown that the greedy algorithm covers at least $OPT(1 - \frac{1}{e})$ elements, and thus it is a $1 - \frac{1}{e}$ approximation.
-
+\newpage
 \section{Question 4}
+\subsection*{(a)}
+Given a graph \(G=(V, E)\) with terminals \(R\),  and \(T\) an MST of \(G[R]\) we will show that:
+\[
+cost(T) \le 2|OPT|
+\]
+We look at an optimal solution \(T^*\) which is constructed of \(e \in E(G[R]) \cap T^*\), 
+\(e\in C = \{(u,v) \mid u \in R, \, v \in V \setminus R\} \cap T^* \)and 
+\(e \in E(G[V \setminus R]) \cap T^*\). We will construct a new Graph \(G' \subseteq G[R]\) from \(T^*\), such that  \(e \in E(G') \rightarrow e \in E(G[R]) \) by replacing edges in \(C\) with edges in \(E(G[R])\) And removing edges in \(G[V \setminus R]\) (there cost is \(>0\)).
+For edges \((u_1, v_1), (u_2, v_2), \dots, (u_k, v_k) \in C\), Starting with \(u_1\) we will find the first \(u_i\) such that the path between \(u_1\) to \(u_i\) goes through \((u_1,v_1), (u_i,v_i)\) and remove \((u_1,v_1)\) and replace it with \((u_1, u_i) \in G[R]\). We will continue now starting with \((u_i, v_i)\) and replacing it with \((u_i,u_k)\) For the first k that upholds the above, if no such k exists we will remove the edge and move on to \((u_{i+1}, v_{i+1})\) (because the edge doesn't contribute to any path), and continue until \(C\) is empty. Note that if \(i + 1 > k\) we will loop back to \(i = 1\).
+\\\\
+We will First prove that \(G'\) is connected. 
+\\\\
+Every swap of edges the algorithm does, makes no change to the reach of every vertex. For instance if \((u_i, v_i) \in C\) was swapped with \((u_i, u_j) \in E(G[R])\) There still exists a path \(P \subseteq E(G')\) between \(u_i\) and every \(u \in R\) because any path that went through \((u_i, v_i)\) we can replace with a path that goes through \((u_i, u_j)\) and then the path from \(u_j\) to \(v_i\) (because at that point in the construction of \(G'\) there is a path between \(v_i\) and \(u_j\)). Therefore, every time we replace an edge \(G'\) stays connected. 
+\\\\
+Now Since \(G'\) has edges only in R and is connected, it holds that:
+\[
+cost(G') \ge (T)
+\]
+Also since every \(e_{T^*} \in C \) is replaced with exactly one edge \(e_{T'} \in G[R]\)
+During the replacement step, we note that every edge \(e_i = (u_i, u_k)\) that replaces an edge \(e_i^* = (u_i, v_i) \in C \) holds the following:
+\[
+w(e_i) \le w(e_i^*) + w(e_k^*)
+\]
+where \(e_k^*\) is the next edge(if exists) that will be replaced. Also \(e_i^*\) can contribute at most to two of these bounds, once when it is swapped and once more the iteration before it is swapped when another edge chooses it( because that means it will definitely be chosen and removed in the next iteration). Therefore, it holds that:
+\[
+\sum_{e \in E(G') \setminus T^*}{w(e)} \le \sum_{e \in C}{2w(e)}
+\]
+And in total we get:
+\[
+cost(T) \le \sum_{e \in E(G')}w(e) = \sum_{e \in E(T^*) \cap E(G')}{w(e)} + \sum_{e \in E(G') \setminus T^*}w(e)
+\]
+\[
+\le \sum_{e \in T^* \cap E(G')}{w(e)} + \sum_{e \in C}{2w(e)} 
+\]
+\[
+\le \sum_{e \in T^* \cap E(G')}{2w(e)} + \sum_{e \in C}{2w(e)} 
+\le \sum_{e \in T*}{2w(e)} 
+\le 2|OPT|
+\]
 
+\subsection*{(b)}
+First we note that from the previous question \(cost(\widetilde{T}) \le 2|OPT(\widetilde{G})|\). This is because \(\widetilde{G}\) is complete and the weight function of the shortest path satisfies the triangle inequality.
+\\
+Also \(|OPT(G)| \ge  |OPT(\widetilde{G})|\) because every edge in \( \widetilde{G}\) is at most the same cost of its corresponding edge in \(G\), Therefore the cost of any tree in \(\widetilde{G}\) is smaller than the same tree in \(G\).
+\\
+\(cost(T) \le cost(\widetilde{T})\) because they have the exact same weight before removal of edges in \(T\), Therefore we get the following.
+\[
+cost(T) \le cost(\widetilde{T}) \le 2|OPT(\widetilde{G})| \le  2|OPT(G)|
+\]
 \end{document}
