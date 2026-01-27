@@ -1,0 +1,97 @@
+\section*{Problem 3: Multiple Choice Maximum Coverage}
+\subsection*{Problem Statement}
+Let the universe of elements be $\Omega$. We are given $k$ collections $\mathcal{C}_1, \dots, \mathcal{C}_k$.
+Let $J = (j_1, \dots, j_k)$ be the indices of the sets chosen by the \textbf{local search} algorithm.
+Let $S_{local} = \bigcup_{i=1}^k S_{i, j_i}$ be the set of elements covered by the local solution.
+Let $O = (o_1, \dots, o_k)$ be the indices of the sets chosen by the \textbf{optimal} solution.
+Let $S_{opt} = \bigcup_{i=1}^k S_{i, o_i}$ be the set of elements covered by the optimal solution.
+
+\subsection*{Definitions from Hint}
+For each $i \in \{1, \dots, k\}$, let $U_{-i}$ denote the union of all sets chosen by the local solution \textit{except} the one from collection $i$:
+\[ U_{-i} = \bigcup_{r \in \{1, \dots, k\} \setminus \{i\}} S_{r, j_r} \]
+
+Using this notation, we define the sets $A_i$ and $B_i$ as given in the hint:
+\begin{align*}
+    A_i &= S_{i, j_i} \setminus U_{-i} \\
+    B_i &= S_{i, o_i} \setminus U_{-i}
+\end{align*}
+
+\begin{itemize}
+    \item $A_i$ represents the \textbf{unique contribution} of the local set $S_{i, j_i}$ to the current cover $S_{local}$.
+    \item $B_i$ represents the \textbf{potential contribution} of the optimal set $S_{i, o_i}$ if we were to swap it into the local solution at index $i$.
+\end{itemize}
+
+\subsection*{Proof of Validity}
+
+!!! TODO: Prove the algorithm returns a valid solution. !!!
+
+\subsection*{Approximation Analysis}
+
+\begin{lemma} \label{lemma:local_opt}
+For every $i \in \{1, \dots, k\}$, $|B_i| \le |A_i|$.
+\end{lemma}
+
+\begin{proof}
+Since $J = (j_1, \dots, j_k)$ is returned by the algorithm, it is a local optimum. This means that changing any single index $j_i$ to another index (specifically $o_i$) cannot strictly increase the size of the union.
+
+The size of the current local solution is:
+\[ |S_{local}| = |S_{i, j_i} \cup U_{-i}| = |U_{-i}| + |S_{i, j_i} \setminus U_{-i}| = |U_{-i}| + |A_i| \]
+
+Consider the neighbor solution $J'$ where we replace $j_i$ with $o_i$. The set covered by this new solution is $S' = S_{i, o_i} \cup U_{-i}$. The size of this new solution is:
+\[ |S'| = |S_{i, o_i} \cup U_{-i}| = |U_{-i}| + |S_{i, o_i} \setminus U_{-i}| = |U_{-i}| + |B_i| \]
+
+By the local optimality condition, $|S'| \le |S_{local}|$. Therefore:
+\[ |U_{-i}| + |B_i| \le |U_{-i}| + |A_i| \implies |B_i| \le |A_i| \]
+\end{proof}
+
+\begin{theorem}
+The local search algorithm is a $\frac{1}{2}$-approximation. That is, $|S_{local}| \ge \frac{1}{2} |S_{opt}|$.
+\end{theorem}
+
+\begin{proof}
+We can decompose the optimal solution size into two parts: elements that are already covered by our local solution, and elements that are not.
+\[ |S_{opt}| = |S_{opt} \cap S_{local}| + |S_{opt} \setminus S_{local}| \]
+
+\textbf{Bounding the first term:}
+Trivially, $|S_{opt} \cap S_{local}| \le |S_{local}|$.
+
+\textbf{Bounding the second term:}
+Consider an element $x \in S_{opt} \setminus S_{local}$.
+Since $x \in S_{opt}$, there must exist some index $i$ such that $x \in S_{i, o_i}$.
+Since $x \notin S_{local}$, it means $x$ is not covered by any set in the local solution. Specifically, $x \notin S_{i, j_i}$ and $x \notin U_{-i}$.
+
+Because $x \in S_{i, o_i}$ and $x \notin U_{-i}$, by definition $x \in B_i$.
+Therefore, every element in $S_{opt} \setminus S_{local}$ must belong to at least one set $B_i$:
+\[ S_{opt} \setminus S_{local} \subseteq \bigcup_{i=1}^k B_i \]
+
+Taking the cardinality:
+\[ |S_{opt} \setminus S_{local}| \le \sum_{i=1}^k |B_i| \]
+
+Using Lemma \ref{lemma:local_opt}, we know $\sum |B_i| \le \sum |A_i|$.
+\[ |S_{opt} \setminus S_{local}| \le \sum_{i=1}^k |A_i| \]
+
+Now, observe the sets $A_i$. By definition, $A_i$ consists of elements in $S_{i, j_i}$ that are \textit{not} in any other $S_{r, j_r}$. Therefore, the sets $A_1, \dots, A_k$ are pairwise disjoint subsets of $S_{local}$.
+\[ \sum_{i=1}^k |A_i| = \left| \bigcup_{i=1}^k A_i \right| \le |S_{local}| \]
+
+\textbf{Combining the bounds:}
+\begin{align*}
+    |S_{opt}| &= |S_{opt} \cap S_{local}| + |S_{opt} \setminus S_{local}| \\
+    &\le |S_{local}| + \sum_{i=1}^k |A_i| \\
+    &\le |S_{local}| + |S_{local}| \\
+    &= 2 |S_{local}|
+\end{align*}
+
+Thus, $|S_{local}| \ge \frac{1}{2} |S_{opt}|$.
+\end{proof}
+
+\subsection*{Complexity Analysis}
+
+Let $n = |\Omega|$ be the total number of elements in the universe.
+Let $M = \sum_{i=1}^k \ell_i$ be the total number of sets available across all $k$ collections.
+
+\begin{itemize}
+    \item \textbf{Monotonic Improvement:} In each iteration of the local search, the algorithm only updates the current solution if the total value $V(j_1, \dots, j_k)$ strictly increases.
+    \item \textbf{Bounded Iterations:} Since the value corresponds to the number of covered elements, it is an integer bounded between $0$ and $n$. Therefore, the value can increase at most $n$ times. This implies the `while` loop runs at most $n$ times.
+    \item \textbf{Cost per Iteration:} In each iteration, the algorithm checks every possible single-swap neighbor. There are exactly $M - k$ such neighbors. Calculating the coverage of a neighbor takes polynomial time in the input size.
+    \item \textbf{Conclusion:} The total running time is bounded by $O(n \cdot M \cdot \text{poly}(\text{input size}))$, which is polynomial.
+\end{itemize}

@@ -1,0 +1,104 @@
+\section*{Problem 5: Knapsack with Partition Constraints}
+
+Consider the following variant of the Knapsack problem. The input consists of $n$ items $I = \{1, \ldots, n\}$, where item $i \in I$ has a weight $w_i \in \mathbb{Z}^+$ and a value $v_i \in \mathbb{Z}^+$. The items are partitioned into disjoint sets $S_1, S_2, \ldots, S_m$; that is, $\bigcup_{j \in [m]} S_j = I$ and $S_j \cap S_\ell = \emptyset$ for all $j \neq \ell \in [m]$. Moreover, each set $S_j$ has a bound $k(j)$. Also, we are given a knapsack capacity $B \in \mathbb{Z}^+$. A solution for the problem is a subset of items $P \subseteq I$ such that $\sum_{i \in P} w_i \leq B$ and $|P \cap S_j| \leq k(j)$ for all $j \in [m]$. The value of the solution $P$ is $\sum_{i \in P} v_i$. The objective is to find a solution $P$ of maximal value. Obtain an FPTAS for the problem.
+
+\subsection*{Overview}
+we will maintain a \emph{domination list} (a list of nondominated $(\text{weight},\text{value})$ pairs).
+A pair $(w,v)$ \emph{dominates} $(w',v')$ if $w \le w'$ and $v \ge v'$.
+Dominated pairs can be discarded without affecting optimality.
+
+For the FPTAS, we will apply the standard scaling technique (as in the usual knapsack FPTAS) and run the same domination-list DP on the scaled instance.
+
+\subsection*{Algorithm Description}
+\paragraph{Domination-list primitives.}
+\begin{itemize}
+    \item $\textsc{Shift}(L, \Delta w, \Delta v) = \{(w+\Delta w, v+\Delta v) : (w,v)\in L\}$.
+    \item $\textsc{Prune}(L)$ removes all dominated pairs from $L$ (and may also remove pairs with $w>B$). One implementation: sort pairs by increasing weight; sweep, keeping a pair only if its value is strictly larger than the maximum value seen so far. Its complexity is $O(|L| \log |L|)$ due to sorting.
+    \item $\textsc{Convolve}(L_1, L_2)$ computes all pairwise sums of pairs from $L_1$ and $L_2$: \[ \textsc{Convolve}(L_1, L_2) = \{(w_1 + w_2, v_1 + v_2) : (w_1, v_1) \in L_1, (w_2, v_2) \in L_2\} \]. Its complexity is $O(|L_1| \cdot |L_2|)$.
+\end{itemize}
+
+\begin{algorithm}[H]
+\caption{Knapsack with Partition Constraints (Domination Lists)}
+\begin{algorithmic}[1]
+\Function{Knapsack-Partition}{$I, S_1, S_2, \ldots, S_m, k, B$}
+    \State $L \gets \{(0,0)\}$ \Comment{global nondominated set of feasible (weight,value) pairs}
+    \For{each partition $S_j$}
+        \State \Comment{Compute nondominated options using items from $S_j$ with at most $k(j)$ picks}
+        \State $L^{(0)} \gets \{(0,0)\}$
+        \For{$c=1$ to $k(j)$} $L^{(c)} \gets \emptyset$ \EndFor
+        \For{each item $i \in S_j$}
+            \For{$c$ from $k(j)$ down to $1$}
+                \State $L^{(c)} \gets \textsc{Prune}\Big( L^{(c)} \cup \textsc{Shift}(L^{(c-1)}, w_i, v_i)\Big)$
+            \EndFor
+        \EndFor
+        \State \Comment{Combine the chosen items from $S_j$ with the global list}
+        \State $L_{\text{next}} \gets \emptyset$
+        \For{$c=0$ to $k(j)$}
+            \State $L_{\text{next}} \gets \textsc{Prune}(L_{\text{next}} \cup \textsc{Convolve}(L, L^{(c)}))$
+        \EndFor
+        \State $L \gets L_{\text{next}}$
+    \EndFor
+    \State \Return $\max\{v : (w,v)\in L\}$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+
+\subsection*{Proof of Correctness}
+Without loss of generality, assume $\forall j,\ k(j) \le |S_j|$ (otherwise replace $k(j)$ by $|S_j|$).
+
+\begin{lemma}
+    After processing partitions $S_1,\dots,S_j$, the list $L$ contains exactly the nondominated pairs $(w,v)$ such that there exists a feasible selection of items from the first $j$ partitions of total weight $w$ and total value $v$ (respecting all bounds).
+\end{lemma}
+
+\begin{proof}
+    \textbf{Base case ($j=0$):} $L=\{(0,0)\}$ is the unique feasible pair (select nothing), and it is nondominated.
+
+    \textbf{Inductive step:} Assume the claim holds after $S_1,\dots,S_{j-1}$. The lists $L^{(c)}$ are constructed with an explicit counter $c$, and $\textsc{Prune}$ only removes dominated pairs, hence each $L^{(c)}$ represents exactly the nondominated achievable pairs using exactly $c$ items from $S_j$. 
+    When convolving $L^{(c)}$ with $L_{\text{new}}$, we consider all ways to add $c$ items from $S_j$ to previously selected items (from partitions $1$ to $j-1$). The final pruning step ensures that only nondominated pairs remain in $L_{\text{new}}$. Thus, after processing $S_j$, $L$ contains exactly the nondominated pairs corresponding to feasible selections from the first $j$ partitions.
+\end{proof}
+
+\begin{theorem}
+    The algorithm returns the optimal objective value for the knapsack with partition constraints problem.
+\end{theorem}
+
+\begin{proof}
+    After processing all partitions, every feasible solution corresponds to some pair in the (unpruned) constructed set, and pruning preserves at least one representative of every attainable optimum value (for some weight). Thus $\max\{v:(w,v)\in L\}$ equals the optimal objective value under capacity $B$ and the partition bounds.
+\end{proof}
+
+\subsection*{Time Complexity}
+We will note $V = \sum_{i \in I} v_i$, and $k_{\max} = \max_{j \in [m]} k(j) \le n$.
+The outer loop runs $m$ times (once per partition).
+
+Inside, we have two main parts:
+\begin{itemize}
+    \item Updating $L^{(c)}$ for each item in $S_j$: we do $|S_j| \le n$ iterations, each involving at most $k_{\max}$ shifts and prunes. Each prune takes $O(|L^{(c)}| \log |L^{(c)}|)$ time, and $|L^{(c)}| \le \min(B, V)$ (since weights are at most $B$ and values at most $V$). Thus this part takes $O(n \cdot k_{\max} \cdot \min(B, V) \log(\min(B, V)))$ time per partition.
+    \item Combining $L^{(c)}$ into $L_{\text{next}}$: we do at most $k_{\max}+1$ convolutions and prunes. Each convolution takes $O(|L| \cdot |L^{(c)}|) \le O(\min(B, V)^2)$ time, and each prune takes $O(|L_{\text{next}}| \log |L_{\text{next}}|) \le O(\min(B, V) \log(\min(B, V)))$ time. Thus this part takes $O(k_{\max} \cdot \min(B, V)^2)$ time per partition.
+\end{itemize}
+
+Thus the total complexity is $O(m \cdot n \cdot k_{\max} \cdot \min(B, V)^2) = O(m \cdot n^2 \cdot \min(B, V)^2)$, which is polynomial in $n$, $m$, and $\min(B, V)$.
+
+\subsection*{FPTAS Construction}
+To enable the FPTAS, we will use the standard scaling technique. Let $V_{\max} = \max_{i \in I} v_i$, $K = \frac{\epsilon V_{\max}}{n}$.
+
+\begin{algorithm}[H]
+\caption{FPTAS for Knapsack with Partition Constraints}
+    \begin{algorithmic}[1]
+    \Function{FPTAS-Knapsack-Partition}{$I, S_1, S_2, \ldots, S_m, k, B$}
+        \State Scale values: for each $i \in I$, set $v'_i = \lfloor v_i / K \rfloor$
+        \State \Return \Call{Knapsack-Partition}{$I, S_1, S_2, \ldots, S_m, k, B$}
+    \EndFunction
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{proof}
+    \textbf{Time Complexity:} The time complexity is $O\left(m \cdot n^2 \cdot \min(B, V')^2\right)$
+    \[\min(B, V') \le V' = \sum_{i \in I} v'_i \le \sum_{i \in I} \frac{v_i}{K} = \frac{\sum_{i \in I} v_i}{K} \le \frac{n V_{\max}}{K} = \frac{n V_{\max}}{\epsilon V_{\max} / n} = \frac{n^2}{\epsilon}\]
+    Thus the time complexity is $O\left(m \cdot n^2 \cdot \left(\frac{n^2}{\epsilon}\right)^2\right) = O\left(\frac{m \cdot n^6}{\epsilon^2}\right)$, which is polynomial in $n$, $m$, and $\frac{1}{\epsilon}$.
+\end{proof}
+
+\begin{proof}
+    \textbf{Approximation Ratio:} For the optimal set $P^*$, the difference between the true value and the scaled value is:
+    \[ \sum_{i \in P^*} v_i - K \cdot \sum_{i \in P^*} v'_i < \sum_{i \in P^*} K = |P^*| K \le n K = \epsilon V_{\max} \le \epsilon \cdot OPT \]
+    Thus, the solution returned is at least $(1-\epsilon) \cdot OPT$.
+\end{proof}

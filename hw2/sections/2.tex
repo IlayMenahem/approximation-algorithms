@@ -1,0 +1,91 @@
+
+\section*{Problem 2: Hitting Set}
+\textbf{Input:} A collection of non-empty sets $\mathcal{C} = \{S_1, \dots, S_m\}$ over a universe $U$, and a non-negative weight function $w: U \to \mathbb{R}_{\ge 0}$.\\
+\textbf{Output:} A subset $H \subseteq U$ such that $H \cap S_i \neq \emptyset$ for all $i$, minimizing $\sum_{u \in H} w(u)$.\\
+\textbf{Parameter:} Let $S_{max} = \max_{S \in \mathcal{C}} |S|$.
+
+\subsection*{The Algorithm}
+
+\fbox{
+    \parbox{\textwidth}{
+        \textbf{Algorithm: LocalRatioHittingSet($\mathcal{C}, U, w$)}
+        \begin{enumerate}
+            \item Let $U_0 = \{u \in U \mid w(u) = 0\}$.
+            \item \textbf{Check:} If $U_0$ hits all sets in $\mathcal{C}$ (i.e., $\forall S \in \mathcal{C}, S \cap U_0 \neq \emptyset$):
+            \begin{itemize}
+                \item Return $U_0$.
+            \end{itemize}
+            \item \textbf{Select:} Pick any set $S \in \mathcal{C}$ such that $S \cap U_0 = \emptyset$.
+            \item \textbf{Define $\epsilon$:} Let $\epsilon = \min_{u \in S} w(u)$.
+            \item \textbf{Decompose Weight:} Define $w = w_1 + w_2$ as follows:
+                \[ w_1(u) = \begin{cases} \epsilon & \text{if } u \in S \\ 0 & \text{otherwise} \end{cases} \]
+                \[ w_2(u) = w(u) - w_1(u) \]
+            \item \textbf{Recurse:} Let $H = \text{LocalRatioHittingSet}(\mathcal{C}, U, w_2)$.
+            \item \textbf{Return:} $H$.
+        \end{enumerate}
+    }
+}
+
+\subsection*{Proof of Validity}
+
+!!! TODO: Prove the algorithm returns a valid hitting set. !!!
+
+\subsection*{Approximation Analysis}
+
+\begin{theorem}
+The algorithm produces an $S_{max}$-approximation for the Weighted Hitting Set problem.
+\end{theorem}
+
+\begin{proof}
+We proceed by induction on the size of the set $U^+ = \{u \in U \mid w(u) > 0\}$, which is the number of elements with strictly positive weight.
+
+\paragraph{Base Case:}
+If the algorithm terminates at Step 2, it returns $U_0$. For all $u \in U_0$, $w(u) = 0$. Thus, the total cost is $w(U_0) = 0$. Since the optimal cost is non-negative, $w(U_0) \le S_{max} \cdot OPT$, satisfying the approximation ratio.
+
+\paragraph{Inductive Step:}
+Let $k = |U^+|$ be the number of elements with strictly positive weight in $w$. Assume the approximation holds for any instance where the number of positive-weight elements is strictly less than $k$.
+
+Consider the weight function $w_2$ defined in Step 5. By our choice of $\epsilon = \min_{u \in S} w(u)$, there is at least one element $u^* \in S$ such that $w(u^*) = \epsilon$. Consequently, for this element, $w_2(u^*) = w(u^*) - \epsilon = 0$.
+Since $w_2(u) \le w(u)$ for all $u$, and at least one element ($u^*$) has transitioned from positive weight in $w$ to zero weight in $w_2$, the number of positive-weight elements in $w_2$ is strictly less than $k$.
+
+Therefore, we can apply the inductive hypothesis to the recursive call on $(\mathcal{C}, U, w_2)$. This call returns a set $H$ satisfying:
+\begin{equation} \label{eq:induct}
+    w_2(H) \le S_{max} \cdot OPT(w_2)
+\end{equation}
+where $OPT(w_2)$ is the weight of the optimal hitting set under $w_2$.
+
+We analyze the approximation with respect to the "easy" weight function $w_1$:
+\begin{enumerate}
+    \item \textbf{Cost of H under $w_1$:}
+    Since $w_1(u) = \epsilon$ for $u \in S$ and 0 otherwise:
+    \[ w_1(H) = \sum_{u \in H} w_1(u) = \sum_{u \in H \cap S} \epsilon = |H \cap S| \cdot \epsilon \]
+    Since $H$ is a valid hitting set, it must hit $S$. Regardless of which elements it picks, we know $|H \cap S| \le |S|$. Furthermore, by definition $S_{max} \ge |S|$. Thus:
+    \[ w_1(H) \le |S| \cdot \epsilon \le S_{max} \cdot \epsilon \]
+    
+    \item \textbf{Cost of OPT under $w_1$:}
+    Any feasible hitting set $H^*$ must hit the specific set $S$ selected in Step 3. Therefore, $H^* \cap S \neq \emptyset$. The minimum cost to hit $S$ under $w_1$ is exactly $\epsilon$ (by picking any single element $u \in S$). Thus:
+    \[ OPT(w_1) \ge \epsilon \]
+    
+    \item \textbf{Ratio for $w_1$:} Combining the above:
+    \[ w_1(H) \le S_{max} \cdot \epsilon \le S_{max} \cdot OPT(w_1) \]
+\end{enumerate}
+
+\paragraph{Total Weight:}
+The total weight of the solution $H$ under $w$ is:
+\[ w(H) = w_1(H) + w_2(H) \]
+Using the inductive hypothesis (\ref{eq:induct}) and the bound for $w_1$:
+\[ w(H) \le S_{max} \cdot OPT(w_1) + S_{max} \cdot OPT(w_2) \]
+\[ w(H) \le S_{max} \cdot (OPT(w_1) + OPT(w_2)) \]
+
+Since any optimal solution $H^*$ for $w$ is also a valid hitting set for $w_1$ and $w_2$, we have $OPT(w_1) + OPT(w_2) \le w_1(H^*) + w_2(H^*) = w(H^*) = OPT(w)$. Therefore:
+\[ w(H) \le S_{max} \cdot OPT(w) \]
+\end{proof}
+
+\subsection*{Complexity Analysis}
+
+\begin{itemize}
+    \item \textbf{Recursive Depth:} In every recursive step, we select a set $S$ that is \textit{not} currently hit by $U_0$. We calculate $\epsilon = \min_{u \in S} w(u)$. After subtracting $w_1$, at least one element $u^* \in S$ (specifically the one with weight $\epsilon$) will have its weight reduced to 0 in $w_2$.
+    \item Consequently, the number of elements with positive weight strictly decreases in each recursive call. Therefore, there are at most $|U| = n$ recursive calls.
+    \item \textbf{Per-Step Cost:} Finding a set unhit by $U_0$ takes $O(m \cdot S_{max})$. Updating weights takes $O(S_{max})$ because we only update weights for one set.
+    \item \textbf{Total Complexity:} The algorithm runs in polynomial time, specifically $O(n \cdot m \cdot S_{max})$.
+\end{itemize}

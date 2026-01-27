@@ -1,0 +1,123 @@
+\section*{Problem 1: Weighted Max-Cut Local Search}
+auxiliary definitions:
+\begin{itemize}
+    \item $(S, \bar{S})$: a partition of the vertices of $G$ s.t $S = V \setminus \bar{S}$.
+    
+    \item $W(S, \bar{S})$: the total weight of edges crossing the cut $(S, \bar{S})$. $W(S, \bar{S}) = \sum_{(u,v) \in E, u \in S, v \in \bar{S}} w(u,v)$.
+    
+    \item $W_k$: the weight of the cut after $k$ iterations.
+    
+    \item $W_{total}$: the total weight of all edges in the graph. $W_{total} = \sum_{(u,v) \in E} w(u,v)$.
+\end{itemize}
+
+\subsection*{(a) Termination in Polynomial Time}
+\subsubsection*{Problem Statement}
+for a given graph $G = (V, E)$ with non-negative edge weights $w: E \to \mathbb{R}_{\ge 0}$ and a parameter $\epsilon \in (0, 1)$, show that the number of local improvement iterations until the Modified $LS_{Max-Cut}$ algorithm reaches an approximate local optimum is polynomial in the input size.
+
+\begin{proof}
+In the Modified $LS_{Max-Cut}$ algorithm, an iteration consists of moving a vertex $v$ from one side of the partition to the other only if the weight of the cut increases by a factor of more than $(1 + \frac{\epsilon}{n})$.
+
+\begin{lemma}
+    For any $k \ge 0$, \begin{equation} \label{eq:W_k_bound}
+        W_k \ge \left(1 + \frac{\epsilon}{n}\right)^k W_0
+    \end{equation}
+    \begin{proof}
+        By the definition of the algorithm, for any iteration $i \ge 0$, the new weight $W_{i+1}$ satisfies:
+        \begin{equation} \label{eq:W_i_bound}
+            W_{i+1} \ge \left(1 + \frac{\epsilon}{n}\right) W_i
+        \end{equation}
+        By induction on $k$.
+        \begin{itemize}
+            \item Base case: $k = 0$, $W_0 = W_0$.
+            \item Inductive step: assume $W_k \ge \left(1 + \frac{\epsilon}{n}\right)^k W_0$, then $W_{k+1} \ge \left(1 + \frac{\epsilon}{n}\right) W_k \ge \left(1 + \frac{\epsilon}{n}\right)^{k+1} W_0$.
+        \end{itemize}
+    \end{proof}
+\end{lemma}
+
+The weight of any cut is bounded from above by the total weight of all edges in the graph. the final weight $W_{final}$ satisfies $W_{final} \le W_{total}$.
+Combining this with inequality \eqref{eq:W_k_bound}, we have:
+\[
+    W_{total} \ge W_k \ge \left(1 + \frac{\epsilon}{n}\right)^k W_0
+\]
+\[
+    \ln\left(\frac{W_{total}}{W_0}\right) \ge k \ln\left(1 + \frac{\epsilon}{n}\right)
+\]
+\[
+    k \le \frac{\ln(W_{total}/W_0)}{\ln\left(1 + \frac{\epsilon}{n}\right)}
+\]
+
+To bound the denominator, we use the known inequality $\ln(1+x) \ge \frac{x}{1+x}$, Substituting $x = \frac{\epsilon}{n}$:
+\[
+    \ln\left(1 + \frac{\epsilon}{n}\right) \ge \frac{\frac{\epsilon}{n}}{1 + \frac{\epsilon}{n}}
+\]
+Substituting this back into inequality:
+\[
+    k \le \frac{\ln(W_{total}/W_0)}{\ln\left(1 + \frac{\epsilon}{n}\right)} \le \frac{\ln(W_{total}/W_0)}{\frac{\frac{\epsilon}{n}}{1 + \frac{\epsilon}{n}}} = \left(1 + \frac{\epsilon}{n}\right) \frac{n}{\epsilon} \ln\left(\frac{W_{total}}{W_0}\right)
+\]
+Since $\epsilon \in (0, 1)$, we have $(1 + \frac{\epsilon}{n}) < 2$ for $n \ge 1$. Thus:
+\[
+    k < 2 \frac{n}{\epsilon} \ln\left(\frac{W_{total}}{W_0}\right)
+\]
+
+\subsubsection*{Complexity Analysis}
+To prove $k$ is polynomial in the input size, we analyze the term $\ln(W_{total})$.
+Let $\langle \text{input} \rangle$ denote the size of the input in bits.
+\begin{itemize}
+    \item The term $\frac{n}{\epsilon}$ is clearly polynomial in the input parameters $n$ and $\frac{1}{\epsilon}$.
+    \item Let $w_{max}$ be the maximum edge weight. The value $W_{total}$ is at most $|E| \cdot w_{max} \le n^2 w_{max}$.
+    \item The number of bits required to represent $w_{max}$ is part of the input size. Thus, $\ln(w_{max})$ is proportional to the number of bits and is linear in the input size.
+    \item Therefore, $\ln(W_{total}) \le \ln(n^2) + \ln(w_{max}) = 2\ln(n) + \ln(w_{max})$, which is polynomial in the input size.
+\end{itemize}
+
+\textbf{Conclusion:}
+Since both $\frac{n}{\epsilon}$ and $\ln(W_{total}/W_0)$ are polynomial in the input size (specifically, polynomial in $n$, $1/\epsilon$, and the number of bits representing the weights), the total number of iterations $k$ is polynomial.
+\end{proof}
+
+\newpage
+\subsection*{(b) Strongly Polynomial Time Analysis}
+
+\textbf{Problem Statement:}
+Suppose we change Step 1 of the algorithm to select the initial cut $(S, \bar{S})$ where $S = \{v^*\}$ and $v^* = \arg \max_{v \in V} w(E(\{v\}, V \setminus \{v\}))$. Show that the number of local improvement iterations is strongly polynomial (dependent only on $n$ and $\epsilon$).
+
+\begin{proof}
+Let $d(v) = w(E(\{v\}, V \setminus \{v\}))$ denote the weighted degree of vertex $v$.
+
+The new initialization step selects the vertex $v^*$ with the maximum weighted degree. Thus, the weight of the initial cut is $W_0 = d(v^*)$.
+
+\vspace{1em}
+\noindent\textbf{Step 1: Lower bound on the initial cut $W_0$}
+We know that the sum of the weighted degrees of all vertices equals twice the total edge weight (by the Handshaking Lemma generalized for weighted graphs):
+\[
+    \sum_{v \in V} d(v) = 2 W_{total}
+\]
+Since $v^*$ is the vertex with the maximum weighted degree, $d(v^*)$ must be at least the average weighted degree:
+\[
+    d(v^*) \ge \frac{1}{n} \sum_{v \in V} d(v) = \frac{2 W_{total}}{n}
+\]
+Thus, we have the lower bound:
+\begin{equation} \label{eq:w0_bound}
+    W_0 \ge \frac{2 W_{total}}{n}
+\end{equation}
+
+\vspace{1em}
+\noindent\textbf{Step 2: Upper bound on the ratio $W_{total}/W_0$}
+Using the inequality \eqref{eq:w0_bound}, we can bound the ratio of the maximum possible weight to the initial weight:
+\[
+    \frac{W_{total}}{W_0} \le \frac{W_{total}}{\frac{2 W_{total}}{n}} = \frac{n}{2}
+\]
+
+\vspace{1em}
+\noindent\textbf{Step 3: Bounding the number of iterations}
+From part (a), we established that the number of iterations $k$ is bounded by:
+\[
+    k < 2 \frac{n}{\epsilon} \ln\left(\frac{W_{total}}{W_0}\right)
+\]
+Substituting the bound from Step 2 into this inequality:
+\[
+    k < 2 \frac{n}{\epsilon} \ln\left(\frac{n}{2}\right)
+\]
+
+\vspace{1em}
+\noindent\textbf{Conclusion:}
+The bound on the number of iterations $k$ is now $O(\frac{n}{\epsilon} \ln n)$
+\end{proof}

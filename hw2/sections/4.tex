@@ -1,0 +1,104 @@
+\section*{Problem 4: Generalized Steiner Forest (GSF)}
+Let $G = (V, E)$ be a connected undirected graph and $T_1, T_2, \dots, T_t \subseteq V$. Let $w : E \to \R_{\ge 0}$ be a non-negative weight function over the edges. A generalized Steiner forest is a subset $E' \subseteq E$, such that for every $u, v \in T_i$ ($1 \le i \le t$) there is a path in $E'$ connecting $u$ and $v$. In the generalized Steiner forest problem the objective is to find a generalized Steiner forest of minimum weight.
+(a) Let $T = \bigcup_{i=1}^t T_i$. Assume $|T_i| \ge 2$ for every $1 \le i \le t$ and consider $w' : E \to \R$ defined as follows. For an edge $(u, v)$, $w'(u, v) = |\{u, v\} \cap T|$. Show that any minimal generalized Steiner forest of $G$ is a 2-approximation with respect to the weight function $w'$. Note: a generalized Steiner forest $E'$ of $G$ is minimal if there is no $F \subsetneq E'$ which is also a generalized Steiner forest of $G$.
+(b) Suggest a 2-approximation algorithm for the generalized Steiner forest problem using the local ratio technique.
+
+\subsection*{(a) Minimal GSF is a 2-approximation for $w'$}
+\textbf{Claim:} Any minimal generalized Steiner forest $E'$ of $G$ is a 2-approximation with respect to the weight function $w'$.
+
+\begin{lemma}
+    For any $T$ and $E$ the following equality holds: \[ w'(E) = \sum_{v \in T} \deg_{E}(v) \]
+    
+    \begin{proof}
+        \[ w'(E) = \sum_{(u,v) \in E} w'(u,v) = \sum_{(u,v) \in E} |\{u,v\} \cap T| = \sum_{(u,v) \in E} \left( \mathbf{1}_{u \in T} + \mathbf{1}_{v \in T} \right) \] \[ = \sum_{v \in T} |\{(u,v) \in E\}| = \sum_{v \in T} \deg_{E}(v) \]
+    \end{proof}
+\end{lemma}
+
+
+\begin{proof}
+    \textbf{Lower Bound on $OPT$:} Consider a optimal solution $E^*$. Since $\forall 1 \le i \le t, |T_i| \ge 2$, we know that any $v \in T$ must be connected to at least one other vertex in $T_i$ via some edge in $E^*$. Thus, each vertex in $T$ contributes at least 1 to the total weight of $E^*$. Therefore, we have:
+    \[ OPT = w'(E^*) = \sum_{v \in T} \deg_{E^*}(v) \ge \sum_{v \in T} 1 = |T| \]
+
+    \textbf{Upper Bound on $E'$:} Let $E'$ be a minimal generalized Steiner forest of $G$. Let $1 \le k \le t$ be the number of connected components in the subgraph $G'= (V, E')$, Since $E'$ is minimal, removing any edge from any component would disconnect a path between some $u, v \in T_i$, Thus, each component is a tree. a connected subgraph of a tree is a tree, we will mark every connected component of vertices of $T$ in the graph $G'$ as $C_1, C_2, \dots, C_k$. For a tree with $m$ vertices, the sum of degrees is $2(m-1)$. 
+    \[ w'(E') = \sum_{u \in T} \deg_{E'}(u) = \sum_{C_i} 2(|C_i| - 1) \le 2(|T| - 1) - k \le 2|T|\]
+
+    \textbf{Ratio:} Combining the bounds, we have:
+    \[ w'(E') \le 2|T| \le 2 OPT \]
+    Thus, $E'$ is a 2-approximation with respect to the weight function $w'$.
+\end{proof}
+
+\subsection*{(b) Local Ratio Algorithm}
+\subsubsection*{Algorithm}
+here are three primitive procedures that are used in the algorithm:
+
+\begin{itemize}
+    \item $\textsc{isGsf}(F, \{T_1, \dots, T_k\})$: This procedure checks if the forest $F$ is a generalized Steiner forest.
+    \begin{algorithm}[H]
+    \caption{isGsf($F, \{T_1, \dots, T_k\}$)}
+    \begin{algorithmic}[1]
+        \State $G_F \gets (V,F)$
+        \For{$i \in \{1, \dots, k\}$}
+            \If{not \textsc{isConnected}($G_F, T_i$)}
+                \State \Return false
+            \EndIf
+        \EndFor
+        \State \Return true
+    \end{algorithmic}
+    \end{algorithm}
+    The complexity of this algorithm is $O(k \cdot (|V| + |F|))$.
+    
+    \item $\textsc{UpdateActiveSet}(e=(u,v),T)$: This procedure propagates the "active" status to new nodes (the "infection" step).
+    \begin{itemize}
+        \item If $u \in T$ and $v \notin T$, update $T \leftarrow T \cup \{v\}$.
+        \item If $v \in T$ and $u \notin T$, update $T \leftarrow T \cup \{u\}$.
+        \item If both or neither are in $T$, do nothing.
+    \end{itemize}
+    The complexity of this algorithm is $O(\log(|T|))$.
+
+    \item \textsc{PruneForest}$(F, S, \{T_1, T_2, \dots, T_t\})$: This procedure makes the forest $F$ minimal by removing any edge whose deletion does not break the generalized Steiner property.
+    \begin{algorithm}[H]
+    \caption{PruneForest($F, S, \{T_1, T_2, \dots, T_t\}$)}
+    \begin{algorithmic}[1]
+        \While{$S \neq \emptyset$}
+            \State $e \leftarrow \textsc{Pop}(S)$
+            \If{\textsc{isGsf}($F \setminus \{e\}$, $\{T_1, \dots, T_t\}$)}
+                \State $F \leftarrow F \setminus \{e\}$
+            \EndIf
+        \EndWhile
+    \end{algorithmic}
+    \end{algorithm}
+    The complexity of this algorithm is $O(|S| \cdot k (|V| + |F|))$ in the worst case.
+\end{itemize}
+
+\begin{algorithm}[H]
+\caption{2-Approximation for Generalized Steiner Forest using Local Ratio}
+\begin{algorithmic}[1]
+    \Function{GSF}{$G = (V, E), \{T_1, T_2, \dots, T_t\}, w$}
+        \State $F \leftarrow \emptyset$
+        \State $\mathcal{T} \leftarrow \bigcup_{i=1}^k T_i$
+        \State $S \leftarrow Stack(\emptyset)$
+        \While{NOT \textsc{isGsf}($F, \{T_i\}$)} 
+            \State $E_{active} \leftarrow \{ (u,v) \in E \mid \{u,v\} \cap \mathcal{T} \neq \emptyset \}$
+            \State $w'(e) \gets \begin{cases} |\{u,v\} \cap \mathcal{T}| & \text{if } e = (u,v) \in E_{active} \\ 0 & \text{otherwise} \end{cases}$
+            \State $\epsilon \gets \min_{e \in E_{active}} \frac{w(e)}{w'(e)}$ 
+            \State $w(e) \leftarrow w(e) - \epsilon \cdot w'(e)$ 
+            \State $E^* \gets \{e \in E_{active} \mid w(e) = 0\} \setminus F$
+            \State $F \leftarrow F \cup E^*$ 
+            \State Push each $e \in E^*$ onto $S$ 
+            \State for each $e \in E^*$ do: \textsc{UpdateActiveSet}($e, \mathcal{T}$)
+        \EndWhile
+        \State \textsc{PruneForest}$(F, S, \{T_1, T_2, \dots, T_t\})$
+        \State \Return $F$
+    \EndFunction
+    \end{algorithmic}
+\end{algorithm}
+
+\subsubsection*{Proof of Correctness}
+!!! TODO: Prove the algorithm returns a valid solution. !!!
+
+\subsubsection*{Approximation Analysis}
+
+!!! TODO: Prove the algorithm is a 2-approximation. !!!
+
+\subsubsection*{Complexity Analysis}
+!!! TODO: More detailed analysis !!!
