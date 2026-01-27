@@ -16,7 +16,7 @@ Let $G = (V, E)$ be a connected undirected graph and $T_1, T_2, \dots, T_t \subs
 
 
 \begin{proof}
-    \textbf{Lower Bound on $OPT$:} Consider a optimal solution $E^*$. Since $\forall 1 \le i \le t, |T_i| \ge 2$, we know that any $v \in T$ must be connected to at least one other vertex in $T_i$ via some edge in $E^*$. Thus, each vertex in $T$ contributes at least 1 to the total weight of $E^*$. Therefore, we have:
+    \textbf{Lower Bound on $OPT$:} Consider an optimal solution $E^*$. Since $|T_i|\ge 2$ for every $i$, for each terminal $v\in T$ there exists a group $T_i\ni v$ and another terminal $u\in T_i\setminus\{v\}$. Feasibility implies a path between $u$ and $v$ in $E^*$, hence $\deg_{E^*}(v)\ge 1$. Therefore,
     \[ OPT = w'(E^*) = \sum_{v \in T} \deg_{E^*}(v) \ge \sum_{v \in T} 1 = |T| \]
 
     \textbf{Upper Bound on $E'$:} Let $E'$ be a minimal generalized Steiner forest of $G$, and consider the forest $G'=(V,E')$.
@@ -47,7 +47,9 @@ Let $G = (V, E)$ be a connected undirected graph and $T_1, T_2, \dots, T_t \subs
 
 \subsection*{(b) Local Ratio Algorithm}
 \subsubsection*{Algorithm}
-here are three primitive procedures that are used in the algorithm:
+We use a component-based approach. Let $C(v)$ denote the connected component containing $v$ in the current forest $F$. A component $C$ is called \textbf{active} if there exists a group $T_i$ such that $C \cap T_i \neq \emptyset$ and $T_i \not\subseteq C$ (i.e., the component separates a terminal group).
+
+There are two primitive procedures that are used in the algorithm:
 
 \begin{itemize}
     \item $\textsc{isGsf}(F, \{T_1, \dots, T_k\})$: This procedure checks if the forest $F$ is a generalized Steiner forest.
@@ -64,14 +66,6 @@ here are three primitive procedures that are used in the algorithm:
     \end{algorithmic}
     \end{algorithm}
     The complexity of this algorithm is $O(k \cdot (|V| + |F|))$.
-    
-    \item $\textsc{UpdateActiveSet}(e=(u,v),T)$: This procedure propagates the "active" status to new nodes (the "infection" step).
-    \begin{itemize}
-        \item If $u \in T$ and $v \notin T$, update $T \leftarrow T \cup \{v\}$.
-        \item If $v \in T$ and $u \notin T$, update $T \leftarrow T \cup \{u\}$.
-        \item If both or neither are in $T$, do nothing.
-    \end{itemize}
-    The complexity of this algorithm is $O(1)$.
 
     \item \textsc{PruneForest}$(F, S, \{T_1, T_2, \dots, T_t\})$: This procedure makes the forest $F$ minimal by removing any edge whose deletion does not break the generalized Steiner property.
     \begin{algorithm}[H]
@@ -89,104 +83,79 @@ here are three primitive procedures that are used in the algorithm:
 \end{itemize}
 
 \begin{algorithm}[H]
-\caption{2-Approximation for Generalized Steiner Forest using Local Ratio}
+\caption{2-Approximation for Generalized Steiner Forest}
 \begin{algorithmic}[1]
-    \Function{GSF}{$G = (V, E), \{T_1, T_2, \dots, T_t\}, w$}
+    \Function{GSF}{$G = (V, E), \{T_1, \dots, T_t\}, w$}
         \State $F \leftarrow \emptyset$
-        \State $\mathcal{T} \leftarrow \bigcup_{i=1}^t T_i$
         \State $S \leftarrow Stack(\emptyset)$
-        \While{NOT \textsc{isGsf}($F, \{T_1, \dots, T_t\}$)} 
-            \State $E_{active} \leftarrow \{ (u,v) \in E \mid \{u,v\} \cap \mathcal{T} \neq \emptyset \}$
-            \State $w'(e) \gets \begin{cases} |\{u,v\} \cap \mathcal{T}| & \text{if } e = (u,v) \in E_{active} \\ 0 & \text{otherwise} \end{cases}$
-            \State $\epsilon \gets \min_{e \in E_{active}} \frac{w(e)}{w'(e)}$ 
-            \State $w(e) \leftarrow w(e) - \epsilon \cdot w'(e)$ 
-            \State $E^* \gets \{e \in E_{active} \mid w(e) = 0\} \setminus F$
-            \State $F \leftarrow F \cup E^*$ 
-            \State Push each $e \in E^*$ onto $S$ 
-            \State for each $e \in E^*$ do: \textsc{UpdateActiveSet}($e, \mathcal{T}$)
+        \While{NOT \textsc{isGsf}($F, \{T_1, \dots, T_t\}$)}
+            \State Let $\mathcal{C}$ be the set of active components in $(V, F)$
+            \State Define $w'(u,v) = |\{x \in \{u,v\} : C(x) \in \mathcal{C} \text{ and } C(u) \neq C(v)\}|$
+            \State $\epsilon \gets \min \{ w(e)/w'(e) \mid e \in E, w'(e) > 0 \}$
+            \State $w(e) \leftarrow w(e) - \epsilon \cdot w'(e)$ for all $e \in E$
+            \State Add all edges with $w(e) = 0$ to $F$ (if connecting distinct components)
+            \State Push added edges onto $S$
         \EndWhile
-        \State \textsc{PruneForest}$(F, S, \{T_1, T_2, \dots, T_t\})$
+        \State \textsc{PruneForest}$(F, S, \{T_1, \dots, T_t\})$
         \State \Return $F$
     \EndFunction
-    \end{algorithmic}
+\end{algorithmic}
 \end{algorithm}
 
 \subsubsection*{Proof of Correctness}
 We claim that assuming the graph is connected, the algorithm terminates and returns a valid Generalized Steiner Forest $F$.
 
-before we prove the correctness of the algorithm, we should prove the following
 \begin{lemma}
     For any input for which the graph is connected, the loop runs at most $|E|$ times.
 \end{lemma}
 
 \begin{proof}
-    In each iteration, we select $\epsilon = \min_{e \in E_{active}} \frac{w(e)}{w'(e)}$. This ensures at least one edge $e^*$ in $E_{active}$ reaches weight 0. Edges with zero weight are added to $F$ (if not already present) and never removed during the loop. Since $|E|$ is finite and each iteration effectively processes at least one new edge towards inclusion in $F$, the loop runs at most $|E|$ times.
+    In each iteration, we select $\epsilon$ based on the active edges. This ensures at least one edge reaches weight 0. Edges with zero weight are added to $F$ (if not already present) and never removed during the loop. Since $|E|$ is finite, the loop runs at most $|E|$ times.
 \end{proof}
 
 \begin{enumerate}
-    \item \textbf{Termination:} By the Lemma above, the \textbf{while} loop runs at most $|E|$ times. Since each iteration takes finite time, the loop must terminate. Furthermore, since the graph $G$ is connected, a valid GSF exists (e.g., the spanning tree). The loop continues adding edges until the condition $\textsc{isGsf}(F, \{T_i\})$ is met. In the worst case, $F$ grows to include all edges in $E$, which is definitely a GSF. Thus, the algorithm terminates with a valid solution.
-
-    \item \textbf{Feasibility (Phase 1):} The \textbf{while} loop terminates only when $\textsc{isGsf}(F, \{T_i\})$ returns true. Therefore, the set $F$ obtained after the loop satisfies the Generalized Steiner Forest property.
-
-    \item \textbf{Feasibility (Phase 2 - Pruning):} The pruning phase iterates through the edges in $S$ and removes an edge $e$ from $F$ only if $\textsc{isGsf}(F \setminus \{e\}, \{T_i\})$ remains true. This explicitly maintains the invariant that $F$ is a valid Generalized Steiner Forest. Thus, the final set $F$ returned by the algorithm is a valid solution.
+    \item \textbf{Termination:} By the Lemma above, the \textbf{while} loop runs at most $|E|$ times. Since each iteration takes finite time, the loop must terminate. Furthermore, since the graph $G$ is connected, a valid GSF exists. The loop continues adding edges until the condition $\textsc{isGsf}(F, \{T_i\})$ is met.
+    \item \textbf{Feasibility:} The \textbf{while} loop terminates only when $\textsc{isGsf}(F, \{T_i\})$ returns true, and the pruning phase maintains this property.
 \end{enumerate}
 
 \subsubsection*{Approximation Analysis}
-
 \begin{theorem}
     Let $F$ be the forest returned by the algorithm and let $OPT$ be an optimal generalized Steiner forest for the original weights $w$. Then $w(F) \le 2 \cdot w(OPT)$.
 \end{theorem}
 
 \begin{proof}
-We apply the local ratio technique.
+    Let $F$ denote the output \emph{after} the pruning step; then $F$ is feasible and minimal.
+    The weights are decomposed into iterations: at iteration $j$ we subtract $\epsilon_j w'_j$ from the current weights (where $w'_j$ is defined by the active components in that iteration), so overall
+    \[
+        w \;=\; w_{\mathrm{final}} \;+\; \sum_j \epsilon_j w'_j.
+    \]
+    Since the algorithm adds only edges of (current) weight $0$, the returned forest satisfies $w_{\mathrm{final}}(F)=0$. Therefore,
+    \[
+        w(F)=\sum_j \epsilon_j\, w'_j(F)
+        \qquad\text{and}\qquad
+        w(OPT)\ge \sum_j \epsilon_j\, w'_j(OPT).
+    \]
+    It thus suffices to show $w'_j(F) \le 2 \cdot w'_j(OPT)$ for each iteration $j$.
 
-\textbf{Step 1: Weight Decomposition.}
-The algorithm decomposes the weight function as:
-\[
-    w = \sum_{j=1}^k \epsilon_j w'_j + w^{(k)}
-\]
-where each $\epsilon_j > 0$, each $w'_j \geq 0$, and $w^{(k)}$ is the residual after $k$ iterations.
+    Consider iteration $j$ with active components $\mathcal{C}_j$. We view the graph as a contracted multigraph where each component of $F$ is a node. In this view:
+    \begin{itemize}
+        \item The "terminals" are the nodes corresponding to $\mathcal{C}_j$.
+        \item The weight function $w'_j(e)$ counts how many endpoints of $e$ are "terminals" (Active Components).
+    \end{itemize}
 
-\begin{lemma}
-    For any $j$, $w^{(k)}(e) \ge 0$ for all $e \in E$.
+    \textbf{Lower Bound:} Any feasible solution $OPT$ must connect every active component $C \in \mathcal{C}_j$ to some other vertex (otherwise the terminals in $T_i$ separated by $C$ remain disconnected). Thus, in the contracted view, every node in $\mathcal{C}_j$ has degree $\ge 1$ in $OPT$. Summing degrees:
+    \[ w'_j(OPT) = \sum_{C \in \mathcal{C}_j} \deg_{OPT}(C) \ge |\mathcal{C}_j| \]
 
-    \begin{proof}
-        By induction on the number of iterations.
-        \begin{itemize}
-            \item Base case: $k = 0$. $w^{(0)}(e) = w(e) \ge 0$
-            \item Inductive step: assume $w^{(k)}(e) \ge 0$ for all $e \in E$, then since $\epsilon_j \cdot w'_j(e) \le w(e)$, we have $w^{(k+1)}(e) = w(e) - \epsilon_j \cdot w'_j(e) \ge 0$
-        \end{itemize}
-    \end{proof}
-\end{lemma}
+    \textbf{Upper Bound:} The final forest $F$ is minimal. Consider the contracted view where each component of $(V, F_j)$ becomes a single node. Edges internal to $F_j$-components disappear under contraction, and minimality implies the contracted graph is a forest.
 
-\textbf{Step 2: Cost of the Solution.}
-Edges are added to $F$ only when they become tight (weight reaches 0). Since weights only decrease, every edge in $F$ satisfies $w^{(k)}(e) = 0$. Pruning only removes edges, so:
-\[
-    w(F) = \sum_{j=1}^k \epsilon_j \cdot w'_j(F)
-\]
+    Any leaf in this contracted forest must be an active component:
+    \begin{itemize}
+        \item If a leaf $C$ were inactive, then for every group $T_i$ either $C\cap T_i=\emptyset$ or $T_i\subseteq C$. Hence no connectivity requirement forces $C$ to connect to other components. Removing the unique edge incident to $C$ would keep feasibility, contradicting minimality.
+    \end{itemize}
+    Since all leaves are active components (i.e., in $\mathcal{C}_j$), applying the degree-sum argument from Part (a):
+    \[ w'_j(F) \le 2 |\mathcal{C}_j| - 2 \]
 
-\textbf{Step 3: Lower Bound on OPT.}
-For any feasible solution $X$, and $X = OPT$ in particular:
-\[
-    w(X) = \sum_{j=1}^k \epsilon_j \cdot w'_j(X) + w^{(k)}(X) \geq \sum_{j=1}^k \epsilon_j \cdot w'_j(X)
-\]
-
-\textbf{Step 4: Applying Part (a).}
-We show that for each iteration $j$: $w'_j(F) \leq 2 \cdot w'_j(OPT)$.
-
-In each iteration, $w'_j(u,v) = |\{u,v\} \cap \mathcal{T}_j|$ where $\mathcal{T}_j \supseteq T = \bigcup_i T_i$ is the current active set. Since the pruning step ensures $F$ is a \emph{minimal} GSF, we apply part (a): the returned forest $F$ is a 2-approximation with respect to $w'_j$.
-
-Note: The active set $\mathcal{T}_j$ may grow to include non-terminal vertices via the infection step. However, part (a)'s proof relies only on:
-\begin{itemize}
-    \item Lower bound: Each original terminal $v \in T$ must have $\deg_{OPT}(v) \geq 1$, so $w'_j(OPT) \geq |T|$.
-    \item Upper bound: After pruning, $F$ is a forest with no non-terminal leaves, so $w'_j(F) \leq 2|T|$ by the degree-sum argument in part (a).
-\end{itemize}
-Thus $w'_j(F) \leq 2|T| \leq 2 \cdot w'_j(OPT)$ holds regardless of the infected non-terminals.
-
-\textbf{Step 5: Conclusion.}
-\[
-    w(F) = \sum_{j=1}^k \epsilon_j \cdot w'_j(F) \leq \sum_{j=1}^k 2\epsilon_j \cdot w'_j(OPT) = 2 \sum_{j=1}^k \epsilon_j \cdot w'_j(OPT) \leq 2 \cdot w(OPT)
-\]
+    \textbf{Conclusion:} $w'_j(F) \le 2 |\mathcal{C}_j| \le 2 \cdot w'_j(OPT)$. Summing over all iterations proves the theorem.
 \end{proof}
 
 \subsubsection*{Complexity Analysis}
@@ -194,9 +163,9 @@ The algorithm runs in polynomial time.
 \begin{enumerate}
     \item \textbf{Number of Iterations:} As proven in the Lemma, the \textbf{while} loop executes at most $|E|$ times.
     
-    \item \textbf{Cost per Iteration:} Inside the loop, the most expensive operations are checking \textsc{isGsf} and updating edge weights. \textsc{isGsf} takes $O(k(|V|+|E|))$ time. Updating weights and finding $\epsilon$ takes $O(|E|)$.
+    \item \textbf{Cost per Iteration:} Inside the loop, the most expensive operations are checking \textsc{isGsf} and updating edge weights. \textsc{isGsf} takes $O(t(|V|+|F|))$ time. Updating weights and finding $\epsilon$ takes $O(|E|)$.
     
-    \item \textbf{Pruning Phase:} The pruning step iterates through the stack $S$, which contains at most $|E|$ edges. thus the complexity of the pruning step is $O(|S| \cdot k (|V| + |F|)) = O(|E| \cdot k (|V| + |E|))$.
+    \item \textbf{Pruning Phase:} The pruning step iterates through the stack $S$, which contains at most $|E|$ edges. Thus the complexity of the pruning step is $O(|S| \cdot t (|V| + |F|)) = O(|E| \cdot t (|V| + |E|))$.
 \end{enumerate}
 
-Since the number of iterations is bounded by $|E|$ and the work per iteration is polynomial, the total running time is polynomial. Specifically, a loose upper bound is $O(|E| \cdot k \cdot (|V|+|E|))$, which is polynomial in the input size.
+Since the number of iterations is bounded by $|E|$ and the work per iteration is polynomial, the total running time is polynomial. Specifically, a loose upper bound is $O(|E| \cdot t \cdot (|V|+|E|))$, which is polynomial in the input size.
