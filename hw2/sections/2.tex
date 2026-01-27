@@ -6,25 +6,21 @@
 
 \subsection*{The Algorithm}
 
-\fbox{
-    \parbox{\textwidth}{
-        \textbf{Algorithm: LocalRatioHittingSet($\mathcal{C}, U, w$)}
-        \begin{enumerate}
-            \item Let $U_0 = \{u \in U \mid w(u) = 0\}$.
-            \item \textbf{Check:} If $U_0$ hits all sets in $\mathcal{C}$ (i.e., $\forall S \in \mathcal{C}, S \cap U_0 \neq \emptyset$):
-            \begin{itemize}
-                \item Return $U_0$.
-            \end{itemize}
-            \item \textbf{Select:} Pick any set $S \in \mathcal{C}$ such that $S \cap U_0 = \emptyset$.
-            \item \textbf{Define $\epsilon$:} Let $\epsilon = \min_{u \in S} w(u)$.
-            \item \textbf{Decompose Weight:} Define $w = w_1 + w_2$ as follows:
-                \[ w_1(u) = \begin{cases} \epsilon & \text{if } u \in S \\ 0 & \text{otherwise} \end{cases} \]
-                \[ w_2(u) = w(u) - w_1(u) \]
-            \item \textbf{Recurse:} Let $H = \text{LocalRatioHittingSet}(\mathcal{C}, U, w_2)$.
-            \item \textbf{Return:} $H$.
-        \end{enumerate}
-    }
-}
+\begin{algorithm}[H]
+\caption{LocalRatioHittingSet($\mathcal{C}, U, w$)}
+\begin{algorithmic}[1]
+    \State $U_0 \gets \{u \in U \mid w(u) = 0\}$
+    \If{$\forall S \in \mathcal{C}$, $S \cap U_0 \neq \emptyset$}
+        \State \Return $U_0$
+    \EndIf
+    \State Select any $S \in \mathcal{C}$ such that $S \cap U_0 = \emptyset$
+    \State $\epsilon \gets \min_{u \in S} w(u)$
+    \State Define $w_1(u) = \begin{cases} \epsilon & \text{if } u \in S \\ 0 & \text{otherwise} \end{cases}$
+    \State Define $w_2(u) = w(u) - w_1(u)$ for all $u \in U$
+    \State $H \gets \text{LocalRatioHittingSet}(\mathcal{C}, U, w_2)$
+    \State \Return $H$
+\end{algorithmic}
+\end{algorithm}
 
 \subsection*{Proof of Validity}
 

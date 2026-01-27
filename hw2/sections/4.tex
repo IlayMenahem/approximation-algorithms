@@ -19,8 +19,26 @@ Let $G = (V, E)$ be a connected undirected graph and $T_1, T_2, \dots, T_t \subs
     \textbf{Lower Bound on $OPT$:} Consider a optimal solution $E^*$. Since $\forall 1 \le i \le t, |T_i| \ge 2$, we know that any $v \in T$ must be connected to at least one other vertex in $T_i$ via some edge in $E^*$. Thus, each vertex in $T$ contributes at least 1 to the total weight of $E^*$. Therefore, we have:
     \[ OPT = w'(E^*) = \sum_{v \in T} \deg_{E^*}(v) \ge \sum_{v \in T} 1 = |T| \]
 
-    \textbf{Upper Bound on $E'$:} Let $E'$ be a minimal generalized Steiner forest of $G$. Let $1 \le k \le t$ be the number of connected components in the subgraph $G'= (V, E')$, Since $E'$ is minimal, removing any edge from any component would disconnect a path between some $u, v \in T_i$, Thus, each component is a tree. a connected subgraph of a tree is a tree, we will mark every connected component of vertices of $T$ in the graph $G'$ as $C_1, C_2, \dots, C_k$. For a tree with $m$ vertices, the sum of degrees is $2(m-1)$. 
-    \[ w'(E') = \sum_{u \in T} \deg_{E'}(u) = \sum_{C_i} 2(|C_i| - 1) \le 2(|T| - 1) - k \le 2|T|\]
+    \textbf{Upper Bound on $E'$:} Let $E'$ be a minimal generalized Steiner forest of $G$, and consider the forest $G'=(V,E')$.
+    Since $E'$ is minimal, no connected component of $G'$ that contains terminals can contain a cycle (otherwise we could remove an edge on the cycle and preserve all required terminal-to-terminal connections inside that component). Hence, every such component is a tree.
+
+    Fix a connected component $H$ of $G'$ that contains at least one terminal. Let $T_H := T \cap V(H)$ and let $S_H := V(H)\setminus T_H$ be the non-terminals of $H$.
+    We claim that no vertex of $S_H$ can be a leaf in the tree $H$: if some $x\in S_H$ had degree 1 in $H$, then removing its unique incident edge would not disconnect any pair $u,v\in T_i$ (since $x$ is not a terminal), contradicting minimality.
+    Therefore, every $x\in S_H$ satisfies $\deg_H(x)\ge 2$, so
+    \[
+        \sum_{x\in S_H}\deg_H(x)\ \ge\ 2|S_H|.
+    \]
+    Since $H$ is a tree, \(\sum_{v\in V(H)}\deg_H(v)=2(|V(H)|-1)=2(|T_H|+|S_H|-1)\). Thus,
+    \[
+        \sum_{v\in T_H}\deg_H(v)
+        = 2(|T_H|+|S_H|-1) - \sum_{x\in S_H}\deg_H(x)
+        \le 2(|T_H|+|S_H|-1) - 2|S_H|
+        = 2|T_H|-2.
+    \]
+    Summing over all terminal-containing components (say there are $c\ge 1$ of them) gives
+    \[
+        w'(E')=\sum_{v\in T}\deg_{E'}(v)\ \le\ \sum_{H}(2|T_H|-2)\ =\ 2|T|-2c\ \le\ 2|T|.
+    \]
 
     \textbf{Ratio:} Combining the bounds, we have:
     \[ w'(E') \le 2|T| \le 2 OPT \]
@@ -116,50 +134,63 @@ before we prove the correctness of the algorithm, we should prove the following
 \subsubsection*{Approximation Analysis}
 
 \begin{theorem}
-    Let $F$ be the forest returned by the algorithm and $OPT$ be an optimal generalized Steiner forest. Then $w'(F) \le 2 \cdot w'(OPT)$.
+    Let $F$ be the forest returned by the algorithm and let $OPT$ be an optimal generalized Steiner forest for the original weights $w$. Then
+    \[
+        w(F)\ \le\ 2\cdot w(OPT).
+    \]
 \end{theorem}
 
-\textbf{1. Weight Decomposition}
+\begin{proof}
+We prove the claim via the local ratio technique.
 
-The algorithm proceeds in iterations. In each iteration $j$, we define a "model" weight function $w'_j$ and a reduction value $\epsilon_j$. The original weight function $w$ can be perfectly decomposed into the sum of these reductions plus a residual weight ($w_{res}$) left over at the end.
+\textbf{1. Weight decomposition.}
+Let $w^{(0)}:=w$ be the initial weight function, and let the algorithm run for $k$ iterations.
+In iteration $j$ it chooses $\epsilon_j$ and defines a nonnegative auxiliary weight function $w'_j$ (supported on the currently active edges), and updates
+\[
+    w^{(j)}(e)\ :=\ w^{(j-1)}(e) - \epsilon_j\cdot w'_j(e).
+\]
+By the choice $\epsilon_j=\min_{e\in E_{active}} \frac{w^{(j-1)}(e)}{w'_j(e)}$ we maintain $w^{(j)}(e)\ge 0$ for all edges $e$.
+Unrolling the updates yields, for every edge $e$,
+\[
+    w(e)\ =\ \sum_{j=1}^k \epsilon_j w'_j(e)\ +\ w^{(k)}(e),
+    \qquad\text{with } w^{(k)}(e)\ge 0.
+\]
 
-For any edge $e \in E$:
-\[ w(e) = \sum_{j=1}^k \epsilon_j w'_j(e) + w_{res}(e) \]
+\textbf{2. The solution cost has no residual part.}
+Edges are added only when they become tight, i.e., when their current weight drops to 0.
+Weights only decrease, so any edge that is ever added has final residual weight $w^{(k)}(e)=0$.
+The pruning phase only removes edges, hence for the final returned forest $F$ we have
+\[
+    w(F)\ =\ \sum_{e\in F} w(e)\ =\ \sum_{e\in F}\sum_{j=1}^k \epsilon_j w'_j(e)\ =\ \sum_{j=1}^k \epsilon_j\, w'_j(F).
+\]
 
-\textbf{2. Cost of the Algorithm's Solution ($F$)}
+\textbf{3. Lower bound on $OPT$ under the decomposition.}
+For any feasible forest $X$ (in particular $X=OPT$),
+\[
+    w(X)\ =\ \sum_{j=1}^k \epsilon_j w'_j(X) + w^{(k)}(X)\ \ge\ \sum_{j=1}^k \epsilon_j w'_j(X).
+\]
+So \(w(OPT)\ge \sum_{j=1}^k \epsilon_j w'_j(OPT)\).
 
-The algorithm only adds an edge $e$ to the tentative solution when its weight drops to 0. This means for every edge in our final forest $F$, the residual weight is zero ($w_{res}(e) = 0$).
+\textbf{4. Bounding each component via part (a).}
+Fix an iteration $j$. The algorithm’s \emph{active set} $\mathcal{T}_j$ is obtained by repeatedly “infecting” vertices along edges whose current weight became 0 and were added to $F$.
+Therefore every vertex in $\mathcal{T}_j$ lies in the same zero-weight connected component (at iteration $j$) as some original terminal.
+Contract all zero-weight edges added up to iteration $j$; this yields a contracted instance in which the images of the original terminal sets still have size at least 2 whenever they impose a nontrivial constraint.
+In that contracted instance, the function $w'_j$ is exactly of the form from part (a): \(w'_j(e)=|\{u,v\}\cap T^{(j)}|\) for the union \(T^{(j)}\) of the contracted terminals.
 
-Thus, the cost of our solution is exactly the sum of the reductions:
-\[ w(F) = \sum_{e\in F} \sum_{j=1}^k \epsilon_j w'_j(e) = \sum_{j=1}^k \epsilon_j w'_j(F) \]
+By part (a), \emph{any minimal feasible generalized Steiner forest} (for those contracted terminal sets) is a 2-approximation with respect to $w'_j$.
+The pruning step makes $F$ minimal, hence we can apply part (a) to conclude:
+\[
+    w'_j(F)\ \le\ 2\cdot w'_j(OPT).
+\]
 
-\textbf{3. Cost of the Optimal Solution ($OPT$)}
-
-The optimal solution $OPT$ is some valid generalized Steiner forest. Its cost is also the sum of the decomposed weights. Since the residual weights are non-negative ($w_{res}(e) \ge 0$), we can lower-bound the cost of $OPT$:
-\[ w(OPT) = \sum_{j=1}^k \epsilon_j w'_j(OPT) + w_{res}(OPT) \ge \sum_{j=1}^k \epsilon_j w'_j(OPT) \]
-
-\textbf{4. The Crucial Inequality (Using Property 4a)}
-
-To prove the theorem, we compare the terms iteration by iteration. We mark $OPT_j$ as the optimal generalized Steiner forest for the weight function $w'_j$. We claim that for every iteration $j$:
-\[ \epsilon_j w'_j(F) \le 2 \cdot \epsilon_j w'_j(OPT_j) \le 2 \cdot \epsilon_j w'_j(OPT) \]
-
-\textbf{Reasoning:}
-\begin{itemize}
-    \item \textbf{The Weight Function:} At iteration $j$, the weight function is defined as $w_j'(e) = |e \cap \mathcal{T}_j|$, where $\mathcal{T}_j$ is the set of active vertices (terminals + nodes connected to them).
-    \item \textbf{Minimality:} The pruning phase ensures that $F$ is a minimal generalized Steiner forest. It contains no redundant edges.
-    \item \textbf{Validity of OPT:} The optimal solution $OPT$ must connect all original terminal sets $\{ T_1, \dots, T_k \}$. Since the active set $\mathcal{T}_j$ is formed by extending these terminals, $OPT$ must also satisfy the connectivity implied by $\mathcal{T}_j$.
-    \item \textbf{Applying Property 4(a):} Property 4(a) states that for the weight function $w'(e) = |e \cap T|$, any minimal generalized Steiner forest has a cost at most twice the optimal cost.
-    Since $F$ is a minimal forest and $OPT$ is a valid candidate:
-    \[ w'_j(F) \le 2 \cdot w'_j(OPT) \]
-\end{itemize}
-
-
-\textbf{5. Conclusion}
-
-We substitute this inequality back into our cost summations:
-\[ w(F) = \sum_{j=1}^k \epsilon_j w'_j(F) \le \sum_{j=1}^k 2 \cdot \epsilon_j w'_j(OPT) = 2 \cdot w(OPT) \]
-
-\textbf{Thus, the algorithm is a 2-approximation.}
+\textbf{5. Summing up.}
+Multiplying by $\epsilon_j$ and summing over all iterations,
+\[
+    w(F)\ =\ \sum_{j=1}^k \epsilon_j w'_j(F)
+    \ \le\ \sum_{j=1}^k 2\epsilon_j w'_j(OPT)
+    \ \le\ 2\, w(OPT).
+\]
+\end{proof}
 
 \subsubsection*{Complexity Analysis}
 The algorithm runs in polynomial time.

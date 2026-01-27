@@ -1,0 +1,314 @@
+\documentclass{article}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{graphicx}
+
+\title{Approximation Algorithms - HW2}
+\author{Aaron Ross}
+\date{January 2026}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+
+\begin{document}
+
+\maketitle
+
+\section*{Question 1}
+
+\subsection*{(a) Termination in Polynomial Time}
+
+\textbf{Problem Statement:}
+Show that the number of local improvement iterations until the Modified LSMax-Cut algorithm reaches an approximate local optimum is polynomial in the input size.
+
+\begin{proof}
+Let $G = (V, E)$ be a graph with non-negative edge weights $w: E \to \mathbb{R}_{\ge 0}$. The algorithm maintains a partition $(S, \bar{S})$. Let $W(S, \bar{S})$ denote the total weight of edges crossing the cut $(S, \bar{S})$.
+
+In the Modified LSMax-Cut algorithm, an iteration consists of moving a vertex $v$ from one side of the partition to the other only if the weight of the cut increases by a factor of more than $(1 + \frac{\epsilon}{n})$.
+
+Let $W_0$ be the weight of the initial cut, and let $W_k$ be the weight of the cut after $k$ iterations. By the definition of the algorithm, for any iteration $i \ge 0$, the new weight $W_{i+1}$ satisfies:
+\begin{equation}
+    W_{i+1} \ge \left(1 + \frac{\epsilon}{n}\right) W_i
+\end{equation}
+
+By induction , after $k$ iterations, the weight of the cut satisfies:
+\begin{equation} \label{eq:bound}
+    W_k \ge \left(1 + \frac{\epsilon}{n}\right)^k W_0
+\end{equation}
+(The proof of this inequality by induction is trivial and is provided at the end of this document for completeness.)
+\\\\
+The weight of any cut is bounded from above by the total weight of all edges in the graph, denoted as $W_{total} = \sum_{e \in E} w(e)$. Thus, the algorithm must terminate when no further improvements are possible, meaning the final weight $W_{final}$ satisfies $W_{final} \le W_{total}$.
+Combining this with inequality \eqref{eq:bound}, we have:
+\[
+    W_{total} \ge W_k \ge \left(1 + \frac{\epsilon}{n}\right)^k W_0
+\]
+Dividing by $W_0$ (assuming $W_0 > 0$) and taking the natural logarithm of both sides:
+\[
+    \ln\left(\frac{W_{total}}{W_0}\right) \ge k \ln\left(1 + \frac{\epsilon}{n}\right)
+\]
+Solving for $k$:
+\begin{equation} \label{eq:k_bound}
+    k \le \frac{\ln(W_{total}/W_0)}{\ln\left(1 + \frac{\epsilon}{n}\right)}
+\end{equation}
+
+To bound the denominator, we use the known inequality $\ln(1+x) \ge \frac{x}{1+x}$ for $x > -1$. Substituting $x = \frac{\epsilon}{n}$:
+\[
+    \ln\left(1 + \frac{\epsilon}{n}\right) \ge \frac{\frac{\epsilon}{n}}{1 + \frac{\epsilon}{n}}
+\]
+Substituting this back into inequality \eqref{eq:k_bound}:
+\[
+    k \le \frac{\ln(W_{total}/W_0)}{\frac{\frac{\epsilon}{n}}{1 + \frac{\epsilon}{n}}} = \left(1 + \frac{\epsilon}{n}\right) \frac{n}{\epsilon} \ln\left(\frac{W_{total}}{W_0}\right)
+\]
+Since $\epsilon \in (0, 1)$, we have $(1 + \frac{\epsilon}{n}) < 2$ for $n \ge 1$. Thus:
+\[
+    k < 2 \frac{n}{\epsilon} \ln\left(\frac{W_{total}}{W_0}\right)
+\]
+
+\noindent\textbf{Analysis of Input Size:}
+To prove $k$ is polynomial in the input size, we analyze the term $\ln(W_{total})$.
+Let $\langle \text{input} \rangle$ denote the size of the input in bits.
+\begin{itemize}
+    \item The term $\frac{n}{\epsilon}$ is clearly polynomial in the input parameters $n$ and $\frac{1}{\epsilon}$.
+    \item Let $w_{max}$ be the maximum edge weight. The value $W_{total}$ is at most $|E| \cdot w_{max} \le n^2 w_{max}$.
+    \item The number of bits required to represent $w_{max}$ is part of the input size. Thus, $\ln(w_{max})$ is proportional to the number of bits and is linear in the input size.
+    \item Therefore, $\ln(W_{total}) \le \ln(n^2) + \ln(w_{max}) = 2\ln(n) + \ln(w_{max})$, which is polynomial in the input size.
+\end{itemize}
+
+\textbf{Conclusion:}
+Since both $\frac{n}{\epsilon}$ and $\ln(W_{total}/W_0)$ are polynomial in the input size (specifically, polynomial in $n$, $1/\epsilon$, and the number of bits representing the weights), the total number of iterations $k$ is polynomial.
+\end{proof}
+
+\newpage
+\subsection*{(b) Strongly Polynomial Time Analysis}
+
+\textbf{Problem Statement:}
+Suppose we change Step 1 of the algorithm to select the initial cut $(S, \bar{S})$ where $S = \{v^*\}$ and $v^* = \arg \max_{v \in V} w(E(\{v\}, V \setminus \{v\}))$. Show that the number of local improvement iterations is strongly polynomial (dependent only on $n$ and $\epsilon$).
+
+\begin{proof}
+Let $W_{total} = \sum_{e \in E} w(e)$ be the total weight of all edges in the graph.
+Let $d(v) = w(E(\{v\}, V \setminus \{v\}))$ denote the weighted degree of vertex $v$.
+
+The new initialization step selects the vertex $v^*$ with the maximum weighted degree. Thus, the weight of the initial cut is $W_0 = d(v^*)$.
+
+\vspace{1em}
+\noindent\textbf{Step 1: Lower bound on the initial cut $W_0$}
+We know that the sum of the weighted degrees of all vertices equals twice the total edge weight (by the Handshaking Lemma generalized for weighted graphs):
+\[
+    \sum_{v \in V} d(v) = 2 W_{total}
+\]
+Since $v^*$ is the vertex with the maximum weighted degree, $d(v^*)$ must be at least the average weighted degree:
+\[
+    d(v^*) \ge \frac{1}{n} \sum_{v \in V} d(v) = \frac{2 W_{total}}{n}
+\]
+Thus, we have the lower bound:
+\begin{equation} \label{eq:w0_bound}
+    W_0 \ge \frac{2 W_{total}}{n}
+\end{equation}
+
+\vspace{1em}
+\noindent\textbf{Step 2: Upper bound on the ratio $W_{total}/W_0$}
+Using the inequality \eqref{eq:w0_bound}, we can bound the ratio of the maximum possible weight to the initial weight:
+\[
+    \frac{W_{total}}{W_0} \le \frac{W_{total}}{\frac{2 W_{total}}{n}} = \frac{n}{2}
+\]
+
+\vspace{1em}
+\noindent\textbf{Step 3: Bounding the number of iterations}
+From part (a), we established that the number of iterations $k$ is bounded by:
+\[
+    k < 2 \frac{n}{\epsilon} \ln\left(\frac{W_{total}}{W_0}\right)
+\]
+Substituting the bound from Step 2 into this inequality:
+\[
+    k < 2 \frac{n}{\epsilon} \ln\left(\frac{n}{2}\right)
+\]
+
+\vspace{1em}
+\noindent\textbf{Conclusion:}
+The bound on the number of iterations $k$ is now $O(\frac{n}{\epsilon} \ln n)$
+\end{proof}
+
+\newpage
+\maketitle
+
+\section*{Question 2}
+\textbf{Input:} A collection of non-empty sets $\mathcal{C} = \{S_1, \dots, S_m\}$ over a universe $U$, and a non-negative weight function $w: U \to \mathbb{R}_{\ge 0}$.\\
+\textbf{Output:} A subset $H \subseteq U$ such that $H \cap S_i \neq \emptyset$ for all $i$, minimizing $\sum_{u \in H} w(u)$.\\
+\textbf{Parameter:} Let $S_{max} = \max_{S \in \mathcal{C}} |S|$.
+
+\section*{The Algorithm}
+
+\noindent\fbox{
+    \parbox{\textwidth}{
+        \textbf{Algorithm: LocalRatioHittingSet($\mathcal{C}, U, w$)}
+        \begin{enumerate}
+            \item Let $U_0 = \{u \in U \mid w(u) = 0\}$.
+            \item \textbf{Check:} If $U_0$ hits all sets in $\mathcal{C}$ (i.e., $\forall S \in \mathcal{C}, S \cap U_0 \neq \emptyset$):
+            \begin{itemize}
+                \item Return $U_0$.
+            \end{itemize}
+            \item \textbf{Select:} Pick any set $S \in \mathcal{C}$ such that $S \cap U_0 = \emptyset$.
+            \item \textbf{Define $\epsilon$:} Let $\epsilon = \min_{u \in S} w(u)$.
+            \item \textbf{Decompose Weight:} Define $w = w_1 + w_2$ as follows:
+                \[ w_1(u) = \begin{cases} \epsilon & \text{if } u \in S \\ 0 & \text{otherwise} \end{cases} \]
+                \[ w_2(u) = w(u) - w_1(u) \]
+            \item \textbf{Recurse:} Let $H = \text{LocalRatioHittingSet}(\mathcal{C}, U, w_2)$.
+            \item \textbf{Return:} $H$.
+        \end{enumerate}
+    }
+}
+
+\section*{Approximation Analysis}
+
+\begin{theorem}
+The algorithm produces an $S_{max}$-approximation for the Weighted Hitting Set problem.
+\end{theorem}
+
+\begin{proof}
+We proceed by induction on the size of the set $U^+ = \{u \in U \mid w(u) > 0\}$, which is the number of elements with strictly positive weight.
+
+\paragraph{Base Case:}
+If the algorithm terminates at Step 2, it returns $U_0$. For all $u \in U_0$, $w(u) = 0$. Thus, the total cost is $w(U_0) = 0$. Since the optimal cost is non-negative, $w(U_0) \le S_{max} \cdot OPT$, satisfying the approximation ratio.
+
+\paragraph{Inductive Step:}
+Let $k = |U^+|$ be the number of elements with strictly positive weight in $w$. Assume the approximation holds for any instance where the number of positive-weight elements is strictly less than $k$.
+
+Consider the weight function $w_2$ defined in Step 5. By our choice of $\epsilon = \min_{u \in S} w(u)$, there is at least one element $u^* \in S$ such that $w(u^*) = \epsilon$. Consequently, for this element, $w_2(u^*) = w(u^*) - \epsilon = 0$.
+Since $w_2(u) \le w(u)$ for all $u$, and at least one element ($u^*$) has transitioned from positive weight in $w$ to zero weight in $w_2$, the number of positive-weight elements in $w_2$ is strictly less than $k$.
+
+Therefore, we can apply the inductive hypothesis to the recursive call on $(\mathcal{C}, U, w_2)$. This call returns a set $H$ satisfying:
+\begin{equation} \label{eq:induct}
+    w_2(H) \le S_{max} \cdot OPT(w_2)
+\end{equation}
+where $OPT(w_2)$ is the weight of the optimal hitting set under $w_2$.
+
+We analyze the approximation with respect to the "easy" weight function $w_1$:
+\begin{enumerate}
+    \item \textbf{Cost of H under $w_1$:}
+    Since $w_1(u) = \epsilon$ for $u \in S$ and 0 otherwise:
+    \[ w_1(H) = \sum_{u \in H} w_1(u) = \sum_{u \in H \cap S} \epsilon = |H \cap S| \cdot \epsilon \]
+    Since $H$ is a valid hitting set, it must hit $S$. Regardless of which elements it picks, we know $|H \cap S| \le |S|$. Furthermore, by definition $S_{max} \ge |S|$. Thus:
+    \[ w_1(H) \le |S| \cdot \epsilon \le S_{max} \cdot \epsilon \]
+    
+    \item \textbf{Cost of OPT under $w_1$:}
+    Any feasible hitting set $H^*$ must hit the specific set $S$ selected in Step 3. Therefore, $H^* \cap S \neq \emptyset$. The minimum cost to hit $S$ under $w_1$ is exactly $\epsilon$ (by picking any single element $u \in S$). Thus:
+    \[ OPT(w_1) \ge \epsilon \]
+    
+    \item \textbf{Ratio for $w_1$:} Combining the above:
+    \[ w_1(H) \le S_{max} \cdot \epsilon \le S_{max} \cdot OPT(w_1) \]
+\end{enumerate}
+
+\paragraph{Total Weight:}
+The total weight of the solution $H$ under $w$ is:
+\[ w(H) = w_1(H) + w_2(H) \]
+Using the inductive hypothesis (\ref{eq:induct}) and the bound for $w_1$:
+\[ w(H) \le S_{max} \cdot OPT(w_1) + S_{max} \cdot OPT(w_2) \]
+\[ w(H) \le S_{max} \cdot (OPT(w_1) + OPT(w_2)) \]
+
+Since any optimal solution $H^*$ for $w$ is also a valid hitting set for $w_1$ and $w_2$, we have $OPT(w_1) + OPT(w_2) \le w_1(H^*) + w_2(H^*) = w(H^*) = OPT(w)$. Therefore:
+\[ w(H) \le S_{max} \cdot OPT(w) \]
+\end{proof}
+
+\section*{Complexity Analysis}
+
+\begin{itemize}
+    \item \textbf{Recursive Depth:} In every recursive step, we select a set $S$ that is \textit{not} currently hit by $U_0$. We calculate $\epsilon = \min_{u \in S} w(u)$. After subtracting $w_1$, at least one element $u^* \in S$ (specifically the one with weight $\epsilon$) will have its weight reduced to 0 in $w_2$.
+    \item Consequently, the number of elements with positive weight strictly decreases in each recursive call. Therefore, there are at most $|U| = n$ recursive calls.
+    \item \textbf{Per-Step Cost:} Finding a set unhit by $U_0$ takes $O(m \cdot S_{max})$. Updating weights takes $O(S_{max})$ because we only update weights for one set.
+    \item \textbf{Total Complexity:} The algorithm runs in polynomial time, specifically $O(n \cdot m \cdot S_{max})$.
+\end{itemize}
+
+\newpage
+\section*{Question 3}
+Let the universe of elements be $\Omega$. We are given $k$ collections $\mathcal{C}_1, \dots, \mathcal{C}_k$.
+Let $J = (j_1, \dots, j_k)$ be the indices of the sets chosen by the \textbf{local search} algorithm.
+Let $S_{local} = \bigcup_{i=1}^k S_{i, j_i}$ be the set of elements covered by the local solution.
+Let $O = (o_1, \dots, o_k)$ be the indices of the sets chosen by the \textbf{optimal} solution.
+Let $S_{opt} = \bigcup_{i=1}^k S_{i, o_i}$ be the set of elements covered by the optimal solution.
+
+\section*{Definitions from Hint}
+For each $i \in \{1, \dots, k\}$, let $U_{-i}$ denote the union of all sets chosen by the local solution \textit{except} the one from collection $i$:
+\[ U_{-i} = \bigcup_{r \in \{1, \dots, k\} \setminus \{i\}} S_{r, j_r} \]
+
+Using this notation, we define the sets $A_i$ and $B_i$ as given in the hint:
+\begin{align*}
+    A_i &= S_{i, j_i} \setminus U_{-i} \\
+    B_i &= S_{i, o_i} \setminus U_{-i}
+\end{align*}
+
+\begin{itemize}
+    \item $A_i$ represents the \textbf{unique contribution} of the local set $S_{i, j_i}$ to the current cover $S_{local}$.
+    \item $B_i$ represents the \textbf{potential contribution} of the optimal set $S_{i, o_i}$ if we were to swap it into the local solution at index $i$.
+\end{itemize}
+
+\section*{Analysis}
+
+\begin{lemma} \label{lemma:local_opt}
+For every $i \in \{1, \dots, k\}$, $|B_i| \le |A_i|$.
+\end{lemma}
+
+\begin{proof}
+Since $J = (j_1, \dots, j_k)$ is returned by the algorithm, it is a local optimum. This means that changing any single index $j_i$ to another index (specifically $o_i$) cannot strictly increase the size of the union.
+
+The size of the current local solution is:
+\[ |S_{local}| = |S_{i, j_i} \cup U_{-i}| = |U_{-i}| + |S_{i, j_i} \setminus U_{-i}| = |U_{-i}| + |A_i| \]
+
+Consider the neighbor solution $J'$ where we replace $j_i$ with $o_i$. The set covered by this new solution is $S' = S_{i, o_i} \cup U_{-i}$. The size of this new solution is:
+\[ |S'| = |S_{i, o_i} \cup U_{-i}| = |U_{-i}| + |S_{i, o_i} \setminus U_{-i}| = |U_{-i}| + |B_i| \]
+
+By the local optimality condition, $|S'| \le |S_{local}|$. Therefore:
+\[ |U_{-i}| + |B_i| \le |U_{-i}| + |A_i| \implies |B_i| \le |A_i| \]
+\end{proof}
+
+\begin{theorem}
+The local search algorithm is a $\frac{1}{2}$-approximation. That is, $|S_{local}| \ge \frac{1}{2} |S_{opt}|$.
+\end{theorem}
+
+\begin{proof}
+We can decompose the optimal solution size into two parts: elements that are already covered by our local solution, and elements that are not.
+\[ |S_{opt}| = |S_{opt} \cap S_{local}| + |S_{opt} \setminus S_{local}| \]
+
+\textbf{Bounding the first term:}
+Trivially, $|S_{opt} \cap S_{local}| \le |S_{local}|$.
+
+\textbf{Bounding the second term:}
+Consider an element $x \in S_{opt} \setminus S_{local}$.
+Since $x \in S_{opt}$, there must exist some index $i$ such that $x \in S_{i, o_i}$.
+Since $x \notin S_{local}$, it means $x$ is not covered by any set in the local solution. Specifically, $x \notin S_{i, j_i}$ and $x \notin U_{-i}$.
+
+Because $x \in S_{i, o_i}$ and $x \notin U_{-i}$, by definition $x \in B_i$.
+Therefore, every element in $S_{opt} \setminus S_{local}$ must belong to at least one set $B_i$:
+\[ S_{opt} \setminus S_{local} \subseteq \bigcup_{i=1}^k B_i \]
+
+Taking the cardinality:
+\[ |S_{opt} \setminus S_{local}| \le \sum_{i=1}^k |B_i| \]
+
+Using Lemma \ref{lemma:local_opt}, we know $\sum |B_i| \le \sum |A_i|$.
+\[ |S_{opt} \setminus S_{local}| \le \sum_{i=1}^k |A_i| \]
+
+Now, observe the sets $A_i$. By definition, $A_i$ consists of elements in $S_{i, j_i}$ that are \textit{not} in any other $S_{r, j_r}$. Therefore, the sets $A_1, \dots, A_k$ are pairwise disjoint subsets of $S_{local}$.
+\[ \sum_{i=1}^k |A_i| = \left| \bigcup_{i=1}^k A_i \right| \le |S_{local}| \]
+
+\textbf{Combining the bounds:}
+\begin{align*}
+    |S_{opt}| &= |S_{opt} \cap S_{local}| + |S_{opt} \setminus S_{local}| \\
+    &\le |S_{local}| + \sum_{i=1}^k |A_i| \\
+    &\le |S_{local}| + |S_{local}| \\
+    &= 2 |S_{local}|
+\end{align*}
+
+Thus, $|S_{local}| \ge \frac{1}{2} |S_{opt}|$.
+\end{proof}
+
+\section*{Complexity Analysis}
+
+Let $n = |\Omega|$ be the total number of elements in the universe.
+Let $M = \sum_{i=1}^k \ell_i$ be the total number of sets available across all $k$ collections.
+
+\begin{itemize}
+    \item \textbf{Monotonic Improvement:} In each iteration of the local search, the algorithm only updates the current solution if the total value $V(j_1, \dots, j_k)$ strictly increases.
+    \item \textbf{Bounded Iterations:} Since the value corresponds to the number of covered elements, it is an integer bounded between $0$ and $n$. Therefore, the value can increase at most $n$ times. This implies the `while` loop runs at most $n$ times.
+    \item \textbf{Cost per Iteration:} In each iteration, the algorithm checks every possible single-swap neighbor. There are exactly $M - k$ such neighbors. Calculating the coverage of a neighbor takes polynomial time in the input size.
+    \item \textbf{Conclusion:} The total running time is bounded by $O(n \cdot M \cdot \text{poly}(\text{input size}))$, which is polynomial.
+\end{itemize}
+
+\end{document}
