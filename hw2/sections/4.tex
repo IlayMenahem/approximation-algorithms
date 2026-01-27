@@ -115,7 +115,51 @@ before we prove the correctness of the algorithm, we should prove the following
 
 \subsubsection*{Approximation Analysis}
 
-!!! TODO: Prove the algorithm is a 2-approximation. !!!
+\begin{theorem}
+    Let $F$ be the forest returned by the algorithm and $OPT$ be an optimal generalized Steiner forest. Then $w'(F) \le 2 \cdot w'(OPT)$.
+\end{theorem}
+
+\textbf{1. Weight Decomposition}
+
+The algorithm proceeds in iterations. In each iteration $j$, we define a "model" weight function $w'_j$ and a reduction value $\epsilon_j$. The original weight function $w$ can be perfectly decomposed into the sum of these reductions plus a residual weight ($w_{res}$) left over at the end.
+
+For any edge $e \in E$:
+\[ w(e) = \sum_{j=1}^k \epsilon_j w'_j(e) + w_{res}(e) \]
+
+\textbf{2. Cost of the Algorithm's Solution ($F$)}
+
+The algorithm only adds an edge $e$ to the tentative solution when its weight drops to 0. This means for every edge in our final forest $F$, the residual weight is zero ($w_{res}(e) = 0$).
+
+Thus, the cost of our solution is exactly the sum of the reductions:
+\[ w(F) = \sum_{e\in F} \sum_{j=1}^k \epsilon_j w'_j(e) = \sum_{j=1}^k \epsilon_j w'_j(F) \]
+
+\textbf{3. Cost of the Optimal Solution ($OPT$)}
+
+The optimal solution $OPT$ is some valid generalized Steiner forest. Its cost is also the sum of the decomposed weights. Since the residual weights are non-negative ($w_{res}(e) \ge 0$), we can lower-bound the cost of $OPT$:
+\[ w(OPT) = \sum_{j=1}^k \epsilon_j w'_j(OPT) + w_{res}(OPT) \ge \sum_{j=1}^k \epsilon_j w'_j(OPT) \]
+
+\textbf{4. The Crucial Inequality (Using Property 4a)}
+
+To prove the theorem, we compare the terms iteration by iteration. We mark $OPT_j$ as the optimal generalized Steiner forest for the weight function $w'_j$. We claim that for every iteration $j$:
+\[ \epsilon_j w'_j(F) \le 2 \cdot \epsilon_j w'_j(OPT_j) \le 2 \cdot \epsilon_j w'_j(OPT) \]
+
+\textbf{Reasoning:}
+\begin{itemize}
+    \item \textbf{The Weight Function:} At iteration $j$, the weight function is defined as $w_j'(e) = |e \cap \mathcal{T}_j|$, where $\mathcal{T}_j$ is the set of active vertices (terminals + nodes connected to them).
+    \item \textbf{Minimality:} The pruning phase ensures that $F$ is a minimal generalized Steiner forest. It contains no redundant edges.
+    \item \textbf{Validity of OPT:} The optimal solution $OPT$ must connect all original terminal sets $\{ T_1, \dots, T_k \}$. Since the active set $\mathcal{T}_j$ is formed by extending these terminals, $OPT$ must also satisfy the connectivity implied by $\mathcal{T}_j$.
+    \item \textbf{Applying Property 4(a):} Property 4(a) states that for the weight function $w'(e) = |e \cap T|$, any minimal generalized Steiner forest has a cost at most twice the optimal cost.
+    Since $F$ is a minimal forest and $OPT$ is a valid candidate:
+    \[ w'_j(F) \le 2 \cdot w'_j(OPT) \]
+\end{itemize}
+
+
+\textbf{5. Conclusion}
+
+We substitute this inequality back into our cost summations:
+\[ w(F) = \sum_{j=1}^k \epsilon_j w'_j(F) \le \sum_{j=1}^k 2 \cdot \epsilon_j w'_j(OPT) = 2 \cdot w(OPT) \]
+
+\textbf{Thus, the algorithm is a 2-approximation.}
 
 \subsubsection*{Complexity Analysis}
 The algorithm runs in polynomial time.
