@@ -6,25 +6,45 @@
 
 \subsection*{The Algorithm}
 
-\begin{algorithm}[H]
-\caption{LocalRatioHittingSet($\mathcal{C}, U, w$)}
-\begin{algorithmic}[1]
-    \State $U_0 \gets \{u \in U \mid w(u) = 0\}$
-    \If{$\forall S \in \mathcal{C}$, $S \cap U_0 \neq \emptyset$}
-        \State \Return $U_0$
-    \EndIf
-    \State Select any $S \in \mathcal{C}$ such that $S \cap U_0 = \emptyset$
-    \State $\epsilon \gets \min_{u \in S} w(u)$
-    \State Define $w_1(u) = \begin{cases} \epsilon & \text{if } u \in S \\ 0 & \text{otherwise} \end{cases}$
-    \State Define $w_2(u) = w(u) - w_1(u)$ for all $u \in U$
-    \State $H \gets \text{LocalRatioHittingSet}(\mathcal{C}, U, w_2)$
-    \State \Return $H$
-\end{algorithmic}
-\end{algorithm}
+\fbox{
+    \parbox{\textwidth}{
+        \textbf{Algorithm: LocalRatioHittingSet($\mathcal{C}, U, w$)}
+        \begin{enumerate}
+            \item Let $U_0 = \{u \in U \mid w(u) = 0\}$.
+            \item \textbf{Check:} If $U_0$ hits all sets in $\mathcal{C}$ (i.e., $\forall S \in \mathcal{C}, S \cap U_0 \neq \emptyset$):
+            \begin{itemize}
+                \item Return $U_0$.
+            \end{itemize}
+            \item \textbf{Select:} Pick any set $S \in \mathcal{C}$ such that $S \cap U_0 = \emptyset$.
+            \item \textbf{Define $\epsilon$:} Let $\epsilon = \min_{u \in S} w(u)$.
+            \item \textbf{Decompose Weight:} Define $w = w_1 + w_2$ as follows:
+                \[ w_1(u) = \begin{cases} \epsilon & \text{if } u \in S \\ 0 & \text{otherwise} \end{cases} \]
+                \[ w_2(u) = w(u) - w_1(u) \]
+            \item \textbf{Recurse:} Let $H = \text{LocalRatioHittingSet}(\mathcal{C}, U, w_2)$.
+            \item \textbf{Return:} $H$.
+        \end{enumerate}
+    }
+}
 
 \subsection*{Proof of Validity}
 
-!!! TODO: Prove the algorithm returns a valid hitting set. !!!
+\begin{lemma}
+The set $H$ returned by the algorithm is a valid hitting set for $\mathcal{C}$.
+\end{lemma}
+
+\begin{proof}
+We proceed by induction on the number of elements with strictly positive weight, denoted by $k = |\{u \in U \mid w(u) > 0\}|$.
+
+\paragraph{Base Case ($k=0$):}
+If there are no elements with positive weight, then $w(u) = 0$ for all $u$. In this case, $U_0 = U$. Since the problem assumes a valid hitting set exists in $U$, $U_0$ must hit all sets. The algorithm returns $U_0$, which is valid.
+
+\paragraph{Inductive Step:}
+Let $k > 0$. Assume the algorithm returns a valid hitting set for any instance with fewer than $k$ positive-weight elements.
+Consider the current instance with $k$ positive-weight elements. The algorithm constructs a weight function $w_2$ where at least one element $u^* \in S$ (which previously had $w(u^*) > 0$) now has $w_2(u^*) = 0$.
+Thus, the recursive call using $w_2$ has strictly fewer than $k$ positive-weight elements.
+By the inductive hypothesis, this recursive call returns a set $H$ that is a valid hitting set for $\mathcal{C}$.
+Since the current step simply returns this same set $H$, the output is a valid hitting set for the current instance.
+\end{proof}
 
 \subsection*{Approximation Analysis}
 
