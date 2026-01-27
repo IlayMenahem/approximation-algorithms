@@ -94,11 +94,37 @@ here are three primitive procedures that are used in the algorithm:
 \end{algorithm}
 
 \subsubsection*{Proof of Correctness}
-!!! TODO: Prove the algorithm returns a valid solution. !!!
+We claim that the algorithm terminates and returns a valid Generalized Steiner Forest $F$.
+
+before we prove the correctness of the algorithm, we should prove the following
+\begin{lemma}
+    For any input for which the graph is connected, the loop runs at most $|E|$ times.
+\end{lemma}
+
+\begin{proof}
+    In each iteration, we select $\epsilon = \min_{e \in E_{active}} \frac{w(e)}{w'(e)}$. This ensures at least one edge $e^*$ in $E_{active}$ reaches weight 0. Edges with zero weight are added to $F$ (if not already present) and never removed during the loop. Since $|E|$ is finite and each iteration effectively processes at least one new edge towards inclusion in $F$, the loop runs at most $|E|$ times.
+\end{proof}
+
+\begin{enumerate}
+    \item \textbf{Termination:} By the Lemma above, the \textbf{while} loop runs at most $|E|$ times. Since each iteration takes finite time, the loop must terminate. Furthermore, since the graph $G$ is connected, a valid GSF exists (e.g., the spanning tree). The loop continues adding edges until the condition $\textsc{isGsf}(F, \{T_i\})$ is met. In the worst case, $F$ grows to include all edges in $E$, which is definitely a GSF. Thus, the algorithm terminates with a valid solution.
+
+    \item \textbf{Feasibility (Phase 1):} The \textbf{while} loop terminates only when $\textsc{isGsf}(F, \{T_i\})$ returns true. Therefore, the set $F$ obtained after the loop satisfies the Generalized Steiner Forest property.
+
+    \item \textbf{Feasibility (Phase 2 - Pruning):} The pruning phase iterates through the edges in $S$ and removes an edge $e$ from $F$ only if $\textsc{isGsf}(F \setminus \{e\}, \{T_i\})$ remains true. This explicitly maintains the invariant that $F$ is a valid Generalized Steiner Forest. Thus, the final set $F$ returned by the algorithm is a valid solution.
+\end{enumerate}
 
 \subsubsection*{Approximation Analysis}
 
 !!! TODO: Prove the algorithm is a 2-approximation. !!!
 
 \subsubsection*{Complexity Analysis}
-!!! TODO: More detailed analysis !!!
+The algorithm runs in polynomial time.
+\begin{enumerate}
+    \item \textbf{Number of Iterations:} As proven in the Lemma, the \textbf{while} loop executes at most $|E|$ times.
+    
+    \item \textbf{Cost per Iteration:} Inside the loop, the most expensive operations are checking \textsc{isGsf} and updating edge weights. \textsc{isGsf} takes $O(k(|V|+|E|))$ time. Updating weights and finding $\epsilon$ takes $O(|E|)$.
+    
+    \item \textbf{Pruning Phase:} The pruning step iterates through the stack $S$, which contains at most $|E|$ edges. thus the complexity of the pruning step is $O(|S| \cdot k (|V| + |F|)) = O(|E| \cdot k (|V| + |E|))$.
+\end{enumerate}
+
+Since the number of iterations is bounded by $|E|$ and the work per iteration is polynomial, the total running time is polynomial. Specifically, a loose upper bound is $O(|E| \cdot k \cdot (|V|+|E|))$, which is polynomial in the input size.
