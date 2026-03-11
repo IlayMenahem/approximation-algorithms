@@ -21,7 +21,7 @@ solution of value at most $(1 + \eps)\text{OPT} + c$, where OPT is
 the value of an optimal solution. Suggest an APTAS for Bin Packing with Trees.
 
 \subsection*{The algorithm}
-\textbf{Solution outline} - First we will divide the items large and small ones, the large ones into intervals of sizes, and we will round the sizes of the items in each interval to the maximum size in the interval. Then we will use the Karmarkar-Karp algorithm to get an APTAS for the abstracted sizes, we will resolve the conflicts, and at last we will add the small items to the bins.
+\textbf{Solution outline} - First we will divide the items into large and small ones, the large ones into intervals of sizes, and we will round the sizes of the items in each interval to the maximum size in the interval. Then we will use the Karmarkar-Karp algorithm to get an APTAS for the abstracted sizes, we will resolve the conflicts, and at last we will add the small items to the bins.
 
 \subsubsection*{Conflict resolution}
 Now we will describe conflict resolution algorithm for tree conflict
@@ -88,15 +88,15 @@ The solution returned is conflict-free and feasible.
 
 \begin{proof}
 Since we don't add a vertex to a bin that contains one of its neighbors, the solution respects the conflict constraints.
-Since we add a vertex to a bin that contains an item of the same abstracted size (which is larger than the vertex's size), or to a new bin, the total size of the items in each bin is at most 1, so the solution is feasible.
+Since we add a vertex to a bin that contains an item of the same abstracted size (the abstracted size is larger than the vertex's size), or to a new bin, the real total size of the items in each bin is at most 1, so the solution is feasible.
 \end{proof}
 
 \begin{claim}
-The number of extra bins we add at most the number of abstracted sizes bins.
+The number of extra bins added is at most the number of distinct abstracted sizes.
 \end{claim}
 
 \begin{proof}
-Since the order is 1-inductive, there can only be a conflict if there is less than on item of the same abstracted size which isn't matched to any vertex, thus the number of conflicts is at most the number of abstracted sizes.
+Since the order is 1-inductive, $v$ has at most one already-placed neighbor $p$, which occupies exactly one bin and thus blocks at most one unmatched slot of $v$'s abstracted size. A new bin is therefore forced only when at most one unmatched slot of that size remains — the one blocked by $p$. Since this exhausts all remaining slots of that size, it can happen at most once per distinct abstracted size.
 \end{proof}
 
 \subsubsection*{Putting it all together}
@@ -107,18 +107,18 @@ Finally, we will describe the APTAS for Bin Packing with Trees.
     \Procedure{BinPackingWithTrees}{$I, T, \eps$}
     % separate the items into small and large items
     \State $\delta \gets \eps^2$
-    \State $m \gets \lceil \frac{1}{\delta^2} \rceil$
-    \State $Small \gets \{i \mid i \in I s_i < \delta\}$
+    \State $m \gets \lceil \frac{1}{\delta} \rceil$
+    \State $Small \gets \{i \mid i \in I, s_i < \delta\}$
     \State $Large \gets I \setminus Small$
     \State sort the items in $Large$ in non-increasing order of size
-    \State $Groups \gets \{G_1, G_2, \ldots, G_m\}$ where $G_j = \{i \in Large \mid s_i \in ((j-1)\delta^2, j\delta^2]\}$
+    \State $Groups \gets \{G_1, G_2, \ldots, G_m\}$ where $G_j = \{i \in Large \mid s_i \in ((j-1)\delta, j\delta]\}$
     \State for each $j \in [m]$ and $i \in G_j$, set $s_i \gets max_{i' \in G_j} s_{i'}$
 
     % solve the problem for the large items without taking into account the conflicts
-    \State $AbstractedBins \gets$ KarmarkarKarp($Large, s$)
+    \State $Bins \gets$ KarmarkarKarp($Large, s$)
 
     % resolve the conflicts
-    \State $Bins \gets$ ConflictResolution($AbstractedBins, T$)
+    \State $Bins \gets$ ConflictResolution($Bins, T$)
 
     % add the small items to the bins
     \State $Bins \gets$ PackSmallItems($Bins, Small, T$)
@@ -149,7 +149,7 @@ Karmarkar-Karp algorithm returns a solution of value at most $(1 + \eps)\text{OP
 
 
 \begin{claim}
-For a given $\eps > 0$, the algorithm returns a that packs the items into at most $(1 + \eps)\text{OPT} + c$ bins.
+For a given $\eps > 0$, the algorithm returns a packing into at most $(1 + \eps)\text{OPT} + c$ bins.
 \end{claim}
 
 \begin{proof}
