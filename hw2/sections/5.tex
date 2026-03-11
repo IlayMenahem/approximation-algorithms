@@ -3,7 +3,7 @@
 Consider the following variant of the Knapsack problem. The input consists of $n$ items $I = \{1, \ldots, n\}$, where item $i \in I$ has a weight $w_i \in \mathbb{Z}^+$ and a value $v_i \in \mathbb{Z}^+$. The items are partitioned into disjoint sets $S_1, S_2, \ldots, S_m$; that is, $\bigcup_{j \in [m]} S_j = I$ and $S_j \cap S_\ell = \emptyset$ for all $j \neq \ell \in [m]$. Moreover, each set $S_j$ has a bound $k(j)$. Also, we are given a knapsack capacity $B \in \mathbb{Z}^+$. A solution for the problem is a subset of items $P \subseteq I$ such that $\sum_{i \in P} w_i \leq B$ and $|P \cap S_j| \leq k(j)$ for all $j \in [m]$. The value of the solution $P$ is $\sum_{i \in P} v_i$. The objective is to find a solution $P$ of maximal value. Obtain an FPTAS for the problem.
 
 \subsection*{Overview}
-we will maintain a \emph{domination list} (a list of nondominated $(\text{weight},\text{value})$ pairs).
+We will maintain a \emph{domination list} (a list of nondominated $(\text{weight},\text{value})$ pairs).
 A pair $(w,v)$ \emph{dominates} $(w',v')$ if $w \le w'$ and $v \ge v'$.
 Dominated pairs can be discarded without affecting optimality.
 
@@ -20,7 +20,7 @@ For the FPTAS, we will apply the standard scaling technique (as in the usual kna
 \begin{algorithm}[H]
 \caption{Knapsack with Partition Constraints (Domination Lists)}
 \begin{algorithmic}[1]
-\Function{Knapsack-Partition}{$I, S_1, S_2, \ldots, S_m, k, B$}
+\Function{Knapsack-Partition}{$I, S_1, S_2, \ldots, S_m, k, B, \text{val}(\cdot)$}
     \State $L \gets \{(0,0)\}$ \Comment{global nondominated set of feasible (weight,value) pairs}
     \For{each partition $S_j$}
         \State \Comment{Compute nondominated options using items from $S_j$ with at most $k(j)$ picks}
@@ -28,7 +28,7 @@ For the FPTAS, we will apply the standard scaling technique (as in the usual kna
         \For{$c=1$ to $k(j)$} $L^{(c)} \gets \emptyset$ \EndFor
         \For{each item $i \in S_j$}
             \For{$c$ from $k(j)$ down to $1$}
-                \State $L^{(c)} \gets \textsc{Prune}\Big( L^{(c)} \cup \textsc{Shift}(L^{(c-1)}, w_i, v_i)\Big)$
+                \State $L^{(c)} \gets \textsc{Prune}\Big( L^{(c)} \cup \textsc{Shift}(L^{(c-1)}, w_i, \text{val}(i))\Big)$
             \EndFor
         \EndFor
         \State \Comment{Combine the chosen items from $S_j$ with the global list}
@@ -55,7 +55,7 @@ Without loss of generality, assume $\forall j,\ k(j) \le |S_j|$ (otherwise repla
     \textbf{Base case ($j=0$):} $L=\{(0,0)\}$ is the unique feasible pair (select nothing), and it is nondominated.
 
     \textbf{Inductive step:} Assume the claim holds after $S_1,\dots,S_{j-1}$. The lists $L^{(c)}$ are constructed with an explicit counter $c$, and $\textsc{Prune}$ only removes dominated pairs, hence each $L^{(c)}$ represents exactly the nondominated achievable pairs using exactly $c$ items from $S_j$. 
-    When convolving $L^{(c)}$ with $L_{\text{new}}$, we consider all ways to add $c$ items from $S_j$ to previously selected items (from partitions $1$ to $j-1$). The final pruning step ensures that only nondominated pairs remain in $L_{\text{new}}$. Thus, after processing $S_j$, $L$ contains exactly the nondominated pairs corresponding to feasible selections from the first $j$ partitions.
+    When convolving $L^{(c)}$ with the current global list $L$, we consider all ways to add $c$ items from $S_j$ to previously selected items (from partitions $1$ to $j-1$). The final pruning step ensures that only nondominated pairs remain in $L_{\text{next}}$. Thus, after processing $S_j$, $L$ contains exactly the nondominated pairs corresponding to feasible selections from the first $j$ partitions.
 \end{proof}
 
 \begin{theorem}
@@ -67,38 +67,98 @@ Without loss of generality, assume $\forall j,\ k(j) \le |S_j|$ (otherwise repla
 \end{proof}
 
 \subsection*{Time Complexity}
-We will note $V = \sum_{i \in I} v_i$, and $k_{\max} = \max_{j \in [m]} k(j) \le n$.
-The outer loop runs $m$ times (once per partition).
+Let $k_{\max}=\max_{j\in[m]} k(j)\le n$. Throughout the algorithm, we discard pairs with $w>B$.
+Crucially, after a $\textsc{Prune}$ step the list contains only nondominated pairs, hence if we sort the remaining pairs by nondecreasing weight, their values are \emph{strictly increasing}. Therefore, for \emph{integer} weights and values, every pruned list has size at most
+\[
+M \;:=\; \min\{B+1,\,V_{\text{sum}}+1\},
+\]
+where $V_{\text{sum}}$ is an upper bound on the maximum attainable value in that run (e.g., $V_{\text{sum}}=\sum_{i\in I} v_i$ in the exact DP, or $V_{\text{sum}}=\sum_{i\in I} v'_i$ in the scaled DP).
 
-Inside, we have two main parts:
+In one partition $S_j$:
 \begin{itemize}
-    \item Updating $L^{(c)}$ for each item in $S_j$: we do $|S_j| \le n$ iterations, each involving at most $k_{\max}$ shifts and prunes. Each prune takes $O(|L^{(c)}| \log |L^{(c)}|)$ time, and $|L^{(c)}| \le \min(B, V)$ (since weights are at most $B$ and values at most $V$). Thus this part takes $O(n \cdot k_{\max} \cdot \min(B, V) \log(\min(B, V)))$ time per partition.
-    \item Combining $L^{(c)}$ into $L_{\text{next}}$: we do at most $k_{\max}+1$ convolutions and prunes. Each convolution takes $O(|L| \cdot |L^{(c)}|) \le O(\min(B, V)^2)$ time, and each prune takes $O(|L_{\text{next}}| \log |L_{\text{next}}|) \le O(\min(B, V) \log(\min(B, V)))$ time. Thus this part takes $O(k_{\max} \cdot \min(B, V)^2)$ time per partition.
+    \item Updating the $L^{(c)}$ lists: for each item we perform at most $k(j)\le k_{\max}$ unions/shifts followed by $\textsc{Prune}$. Each $\textsc{Prune}$ costs $O(M\log M)$, so this part costs $O(|S_j|\cdot k(j)\cdot M\log M)$.
+    \item Combining into $L_{\text{next}}$: we perform at most $k(j)+1$ convolutions, each costing $O(M^2)$, plus a prune costing $O(M\log M)$. Hence this part costs $O(k(j)\cdot M^2)$.
 \end{itemize}
-
-Thus the total complexity is $O(m \cdot n \cdot k_{\max} \cdot \min(B, V)^2) = O(m \cdot n^2 \cdot \min(B, V)^2)$, which is polynomial in $n$, $m$, and $\min(B, V)$.
+Summing over all partitions gives total running time
+\[
+O\Big(n\cdot k_{\max}\cdot M\log M \;+\; m\cdot k_{\max}\cdot M^2\Big),
+\]
+which is pseudo-polynomial (polynomial in $n,m,k_{\max}$ and in $M$).
 
 \subsection*{FPTAS Construction}
-To enable the FPTAS, we will use the standard scaling technique. Let $V_{\max} = \max_{i \in I} v_i$, $K = \frac{\epsilon V_{\max}}{n}$.
+To obtain an FPTAS, we apply the standard value-scaling technique and run the above DP on the scaled instance.
+
+Let $p(i)\in[m]$ be the unique partition index such that $i\in S_{p(i)}$. Define
+\[
+V_{\max}^{\text{feas}} \;:=\; \max\{v_i : w_i\le B \text{ and } k(p(i))\ge 1\}.
+\]
+If no such item exists, then every feasible solution has value $0$, and we can return $0$.
+
+Fix $\epsilon\in(0,1)$ and set
+\[
+K \;:=\; \frac{\epsilon\cdot V_{\max}^{\text{feas}}}{n},
+\qquad
+v'_i \;:=\; \Big\lfloor \frac{v_i}{K}\Big\rfloor \;\;\; \text{for all } i\in I.
+\]
 
 \begin{algorithm}[H]
 \caption{FPTAS for Knapsack with Partition Constraints}
     \begin{algorithmic}[1]
     \Function{FPTAS-Knapsack-Partition}{$I, S_1, S_2, \ldots, S_m, k, B$}
         \State Scale values: for each $i \in I$, set $v'_i = \lfloor v_i / K \rfloor$
-        \State \Return \Call{Knapsack-Partition}{$I, S_1, S_2, \ldots, S_m, k, B$}
+        \State Compute a solution $\widehat{P}$ that maximizes $\sum_{i\in P} v'_i$ among feasible sets $P$
+        \State \hspace{1em}(by running \Call{Knapsack-Partition}{$I,S_1,\ldots,S_m,k,B,\text{val}(\cdot)$} with $\text{val}(i)=v'_i$ and keeping predecessor pointers)
+        \State \Return $\sum_{i\in \widehat{P}} v_i$
     \EndFunction
     \end{algorithmic}
 \end{algorithm}
 
 \begin{proof}
-    \textbf{Time Complexity:} The time complexity is $O\left(m \cdot n^2 \cdot \min(B, V')^2\right)$
-    \[\min(B, V') \le V' = \sum_{i \in I} v'_i \le \sum_{i \in I} \frac{v_i}{K} = \frac{\sum_{i \in I} v_i}{K} \le \frac{n V_{\max}}{K} = \frac{n V_{\max}}{\epsilon V_{\max} / n} = \frac{n^2}{\epsilon}\]
-    Thus the time complexity is $O\left(m \cdot n^2 \cdot \left(\frac{n^2}{\epsilon}\right)^2\right) = O\left(\frac{m \cdot n^6}{\epsilon^2}\right)$, which is polynomial in $n$, $m$, and $\frac{1}{\epsilon}$.
+    \textbf{Running time:} In the scaled instance, $V'_{\text{sum}}:=\sum_{i\in I} v'_i$ satisfies
+    \[
+    V'_{\text{sum}}
+    \;\le\;
+    \sum_{i\in I}\frac{v_i}{K}
+    \;\le\;
+    \frac{n\cdot V_{\max}^{\text{feas}}}{K}
+    \;=\;
+    \frac{n^2}{\epsilon}.
+    \]
+    Hence in the scaled DP we have $M\le \min\{B+1, V'_{\text{sum}}+1\}\le \frac{n^2}{\epsilon}+1$, and by the complexity bound proved above the running time is polynomial in $n$, $m$, and $1/\epsilon$.
 \end{proof}
 
 \begin{proof}
     \textbf{Approximation Ratio:} For the optimal set $P^*$, the difference between the true value and the scaled value is:
-    \[ \sum_{i \in P^*} v_i - K \cdot \sum_{i \in P^*} v'_i < \sum_{i \in P^*} K = |P^*| K \le n K = \epsilon V_{\max} \le \epsilon \cdot OPT \]
-    Thus, the solution returned is at least $(1-\epsilon) \cdot OPT$.
+    \[
+    \sum_{i \in P^*} v_i \;-\; K \cdot \sum_{i \in P^*} v'_i
+    \;<\;
+    \sum_{i \in P^*} K
+    \;=\;
+    |P^*|\cdot K
+    \;\le\;
+    nK
+    \;=\;
+    \epsilon\cdot V_{\max}^{\text{feas}}.
+    \]
+    Since there exists a feasible solution that takes one item achieving $V_{\max}^{\text{feas}}$, we have $OPT\ge V_{\max}^{\text{feas}}$ and therefore $nK\le \epsilon\cdot OPT$.
+
+    Let $\widehat{P}$ be the set returned by the scaled DP (it maximizes $\sum_{i\in P} v'_i$ among feasible sets). Then
+    \[
+    \sum_{i\in \widehat{P}} v'_i \;\ge\; \sum_{i\in P^*} v'_i
+    \;\;\Longrightarrow\;\;
+    K\sum_{i\in \widehat{P}} v'_i \;\ge\; K\sum_{i\in P^*} v'_i.
+    \]
+    Using $\sum_{i\in P} v_i \ge K\sum_{i\in P} v'_i$ for every set $P$, we get
+    \[
+    \sum_{i\in \widehat{P}} v_i
+    \;\ge\;
+    K\sum_{i\in \widehat{P}} v'_i
+    \;\ge\;
+    K\sum_{i\in P^*} v'_i
+    \;\ge\;
+    \sum_{i\in P^*} v_i \;-\; \epsilon\cdot OPT
+    \;=\;
+    (1-\epsilon)\cdot OPT.
+    \]
+    Thus the algorithm is a $(1-\epsilon)$-approximation. (If desired, one can recover the actual set $\widehat{P}$ by storing predecessor pointers for each kept pair.)
 \end{proof}

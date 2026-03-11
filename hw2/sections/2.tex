@@ -36,7 +36,7 @@ The set $H$ returned by the algorithm is a valid hitting set for $\mathcal{C}$.
 We proceed by induction on the number of elements with strictly positive weight, denoted by $k = |\{u \in U \mid w(u) > 0\}|$.
 
 \paragraph{Base Case ($k=0$):}
-If there are no elements with positive weight, then $w(u) = 0$ for all $u$. In this case, $U_0 = U$. Since the problem assumes a valid hitting set exists in $U$, $U_0$ must hit all sets. The algorithm returns $U_0$, which is valid.
+If there are no elements with positive weight, then $w(u) = 0$ for all $u$, hence $U_0 = U$. In particular, $U_0$ hits all sets (each $S_i$ is non-empty and $S_i \subseteq U$), so the algorithm terminates at Step 2 and returns a valid hitting set.
 
 \paragraph{Inductive Step:}
 Let $k > 0$. Assume the algorithm returns a valid hitting set for any instance with fewer than $k$ positive-weight elements.

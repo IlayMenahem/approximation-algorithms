@@ -5,6 +5,8 @@ auxiliary definitions:
     
     \item $W(S, \bar{S})$: the total weight of edges crossing the cut $(S, \bar{S})$. $W(S, \bar{S}) = \sum_{(u,v) \in E, u \in S, v \in \bar{S}} w(u,v)$.
     
+    \item $n$: the number of vertices in the graph, $n = |V|$.
+    
     \item $W_k$: the weight of the cut after $k$ iterations.
     
     \item $W_{total}$: the total weight of all edges in the graph. $W_{total} = \sum_{(u,v) \in E} w(u,v)$.
@@ -50,7 +52,7 @@ To bound the denominator, we use the known inequality $\ln(1+x) \ge \frac{x}{1+x
 \[
     \ln\left(1 + \frac{\epsilon}{n}\right) \ge \frac{\frac{\epsilon}{n}}{1 + \frac{\epsilon}{n}}
 \]
-Substituting this back into inequality:
+Substituting this back into the bound on $k$:
 \[
     k \le \frac{\ln(W_{total}/W_0)}{\ln\left(1 + \frac{\epsilon}{n}\right)} \le \frac{\ln(W_{total}/W_0)}{\frac{\frac{\epsilon}{n}}{1 + \frac{\epsilon}{n}}} = \left(1 + \frac{\epsilon}{n}\right) \frac{n}{\epsilon} \ln\left(\frac{W_{total}}{W_0}\right)
 \]
