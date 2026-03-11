@@ -1,0 +1,157 @@
+\section*{Problem 4: asymptotic PTAS for Bin Packing with trees}
+\subsection*{The problem}
+In the Bin Packing with Trees problem we are given a collection of $n
+> 0$ items $I = \{1, 2, \ldots, n\}$, each item has a size $s_i$, $0
+< s_i \leq 1$. Also, we are given an undirected tree $T = (V, E)$.
+That is, the set of vertices of $T$ is the set of items (i.e., $V =
+I$). A feasible solution for the problem is an m-tuple $U = (U_1,
+U_2, \ldots, U_m)$ for some $m \geq 1$, such that
+\begin{itemize}
+  \item For every $j$, $1 \leq j \leq m$, $U_j \subseteq I$ and
+    $\sum_{i \in U_j} s_i \leq 1$.
+  \item For every $i \in I$ there is $j \in [m]$ such that $i \in U_j$.
+  \item For all $j \in [m]$ and $\{u, v\} \in E$ it holds that $|U_j
+    \cap \{u, v\}| \leq 1$. That is, two items connected by an edge
+    cannot be packed in the same bin.
+\end{itemize}
+An asymptotic PTAS (APTAS) for a minimization problem is a family of
+algorithms $\{A_\eps\}$ and a constant $c > 0$, such that there is an
+algorithm $A_\eps$ for any $\eps > 0$, and $A_\eps$ outputs a
+solution of value at most $(1 + \eps)\text{OPT} + c$, where OPT is
+the value of an optimal solution. Suggest an APTAS for Bin Packing with Trees.
+
+\subsection*{The algorithm}
+\textbf{Solution outline} - First we will divide the items large and small ones, the large ones into intervals of sizes, and we will round the sizes of the items in each interval to the maximum size in the interval. Then we will use the Karmarkar-Karp algorithm to get an APTAS for the abstracted sizes, we will resolve the conflicts, and at last we will add the small items to the bins.
+
+\subsubsection*{Conflict resolution}
+Now we will describe conflict resolution algorithm for tree conflict
+graph, the idea is to sort the vertices in such order that at most
+one of the neighbors came before it in the order. Given such order,
+and an abstracted solution, we can resolve the conflicts by matching
+the vertices to items in the abstracted solution which are of the
+same abstracted size, and there won't be any conflicts. if there is no such item, we can put the vertex in a new bin. Since the order guarantees that at most one of the neighbors came before it, there can only be a conflict if there is less than on item of the same abstracted size, thus the number of conflicts is at most the number of abstracted sizes.
+
+here is an algorithm that finds the desired order of the vertices in the tree:
+\begin{algorithm}
+  \caption{1-inductive tree ordering}
+  \begin{algorithmic}[1]
+    \Procedure{OneInductiveTreeOrdering}{$T = (V, E)$}
+      \State Pick any vertex $r \in V$ as the root
+      \State \Return $\text{BFS}(T, r)$ \Comment{vertices in BFS discovery order}
+    \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+
+\textbf{Complexity analysis} - BFS runs in $O(|V| + |E|) = O(n)$ since $|E| = n - 1$ for a tree on $n$ vertices.
+
+\begin{claim}
+The order returned by the algorithm is a 1-inductive order.
+\end{claim}
+
+\begin{proof}
+Since $T$ is a tree (acyclic), the BFS spanning tree is $T$ itself.
+Every non-root vertex $v$ has exactly one parent, the vertex that
+discovered it, which precedes $v$ in BFS order. Every other neighbor
+of $v$ is a child of $v$ in the BFS tree, meaning $v$ discovered
+it, so it appears \emph{after} $v$. The root has no preceding
+neighbors at all. Hence every vertex has at most one preceding
+neighbor.
+\end{proof}
+
+\begin{algorithm}
+  \caption{Conflict resolution for Bin Packing with Trees}
+  \begin{algorithmic}[1]
+    \Procedure{ConflictResolution}{$AbstractedBins, T$}
+    \State $Order \gets$ OneInductiveTreeOrdering($T$)
+
+    \State $ResolvedBins \gets []$
+    \State \For each vertex $v$ in $Order$
+      \State Find all the bins in $AbstractedBins$ that contain an item of the same abstracted size as $v$, and isn't matched to any vertex yet.
+      \If there is such a bin $B$ that does not contain any neighbor of $v$ in $T$
+        \State Add $v$ to $B$ and add $B$ to $ResolvedBins$
+      \Else
+        \State Create a new bin $B'$, add $v$ to $B'$, and add $B'$ to $ResolvedBins$
+      \EndIf
+    \EndFor
+
+    \State \Return $ResolvedBins$
+
+    \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
+\textbf{Complexity analysis} - We have at most $O(n)$ bins each containing at most $O(n)$ items, so we can find the desired bin for each vertex in $O(n^2)$ time, thus the overall complexity of the conflict resolution algorithm is $O(n^3)$.
+
+\begin{claim}
+The solution returned is conflict-free and feasible.
+\end{claim}
+
+\begin{proof}
+Since we don't add a vertex to a bin that contains one of its neighbors, the solution respects the conflict constraints.
+Since we add a vertex to a bin that contains an item of the same abstracted size (which is larger than the vertex's size), or to a new bin, the total size of the items in each bin is at most 1, so the solution is feasible.
+\end{proof}
+
+\begin{claim}
+The number of extra bins we add at most the number of abstracted sizes bins.
+\end{claim}
+
+\begin{proof}
+Since the order is 1-inductive, there can only be a conflict if there is less than on item of the same abstracted size which isn't matched to any vertex, thus the number of conflicts is at most the number of abstracted sizes.
+\end{proof}
+
+\subsubsection*{Putting it all together}
+Finally, we will describe the APTAS for Bin Packing with Trees.
+\begin{algorithm}
+  \caption{APTAS for Bin Packing with Trees}
+  \begin{algorithmic}[1]
+    \Procedure{BinPackingWithTrees}{$I, T, \eps$}
+    % separate the items into small and large items
+    \State $\delta \gets \eps^2$
+    \State $m \gets \lceil \frac{1}{\delta^2} \rceil$
+    \State $Small \gets \{i \mid i \in I s_i < \delta\}$
+    \State $Large \gets I \setminus Small$
+    \State sort the items in $Large$ in non-increasing order of size
+    \State $Groups \gets \{G_1, G_2, \ldots, G_m\}$ where $G_j = \{i \in Large \mid s_i \in ((j-1)\delta^2, j\delta^2]\}$
+    \State for each $j \in [m]$ and $i \in G_j$, set $s_i \gets max_{i' \in G_j} s_{i'}$
+
+    % solve the problem for the large items without taking into account the conflicts
+    \State $AbstractedBins \gets$ KarmarkarKarp($Large, s$)
+
+    % resolve the conflicts
+    \State $Bins \gets$ ConflictResolution($AbstractedBins, T$)
+
+    % add the small items to the bins
+    \State $Bins \gets$ PackSmallItems($Bins, Small, T$)
+
+    \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+
+\subsection*{Proof of correctness}
+\begin{claim}
+The solution returned is feasible.
+\end{claim}
+
+\begin{proof}
+
+\end{proof}
+
+\subsection*{Running time analysis}
+
+\subsection*{Approximation ratio analysis}
+\begin{claim}
+Karmarkar-Karp algorithm returns a solution of value at most $(1 + \eps)\text{OPT} + c$ for the abstracted sizes.
+\end{claim}
+
+\begin{proof}
+
+\end{proof}
+
+
+\begin{claim}
+For a given $\eps > 0$, the algorithm returns a that packs the items into at most $(1 + \eps)\text{OPT} + c$ bins.
+\end{claim}
+
+\begin{proof}
+
+\end{proof}

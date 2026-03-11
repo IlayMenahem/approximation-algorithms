@@ -1,0 +1,24 @@
+\section*{Problem 5: My own question}
+Propose a question related to the material covered in the course and
+include a complete and formal solution. The level is expected to be similar
+to the level of other questions in this assignment. Extremely well written and
+elegant question may receive a bonus.
+
+\subsection*{The question - The bus network problem}
+Let $G = (V, E)$ be a directed graph, B the number of buses, a metric
+$t: V \times V \to \mathbb{R}_+$, and a set of $n$ passengers, where
+each passenger $i$ is a tuple of the form $(s_i, d_i, t_i)$, where $s_i$ is the
+source vertex, $d_i$ is the destination vertex, and $t_i$ is the time at which
+the passenger wants to arrive at the destination. The bus network problem is
+to find a schedule for the buses, such that each bus starts at some vertex at
+time 0, and travels along a path in the graph, and each passenger can pick any
+bus that passes through $s_i$ at some time and arrives at $d_i$ at time before
+$t_i$. The objective is to minimize the total difference between the time the
+started at the source and the desired arrival time.
+
+the busses have infinite capacity, their speed is 1.
+
+\subsection*{Notes and observations}
+it isn't necessarlly true that it is possible to find a schedule for the buses
+such that all passengers can arrive at their destination before their desired
+time. thus,

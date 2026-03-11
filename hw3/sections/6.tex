@@ -1,0 +1,34 @@
+\section*{Problem 6: Linear Programming on Multidimensional Knapsack}
+In the Multidimensional Knapsack problem we are given a d-dimensional
+knapsack, for some $d \geq 2$, having capacity $b_i$ in the $i$th
+dimension, for $1 \leq i \leq d$. Also, there is a set of items $I =
+\{1, \ldots, n\}$. The size of item $j$ in dimension $i$ is $s_{ij} >
+0$, $1 \leq j \leq n$, $1 \leq i \leq d$. The profit from packing
+item $j$ is $p_j > 0$. A solution is a subset of items $A \subseteq
+I$, and the profit of $A$ is $P(A) = \sum_{j \in A} p_j$.
+A solution $A$ is feasible if $\sum_{j \in A} s_{ij} \leq b_i$ for
+all $1 \leq i \leq d$.
+We assume below that $d$ is a fixed constant. Consider the following
+algorithm for $d$-dimensional Knapsack. Let $\epsilon > 0$ and $h =
+\min(n, \lceil d(1+\epsilon)/\epsilon \rceil)$. Given a selected
+subset of items $S \subseteq I$, the objective of the $S$-problem is
+to find a feasible packing of items in the knapsack which maximizes
+the profit, subject to the following constraints:
+(i) All items in $S$ are packed.
+(ii) Among the items in $I \setminus S$ only items $j$ with profit
+$p_j \leq \min_{\ell \in S} p_\ell$ can be added to the solution.
+Denote this set of items by $\text{Good}(S)$.
+Given the selected subset of items $S$, we denote by LP (S) a linear
+programming relaxation of the $S$-problem. Let $x_j$ be an indicator
+for the selection of item $j \in I$ for the solution. In the linear
+programming relaxation $LP(S)$, $0 \leq x_j \leq 1$. Let $x^B =
+(x^B_1, \ldots, x^B_n)$ be a basic solution for $LP(S)$.
+
+\textbf{The Algorithm}: For any $S \subseteq I$ such that $|S| \leq
+h$, solve optimally $LP(S)$ and round down $x^B$. Choose the solution
+which maximizes the profit.
+(a) (2 pt.) Formulate the linear program $LP(S)$.
+(b) (5 pt.) Denote by $x^I_j$ the integer variable obtained after
+rounding the basic variable $x^B_j$. Let $F$ be the subset of items
+$j$ for which $x^B_j$ is fractional, i.e., $x^I_j < x^B_j$. Show that
+$|F| \leq d$.
