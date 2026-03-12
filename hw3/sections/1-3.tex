@@ -17,7 +17,7 @@ A "configuration" is a vector $(s_1, s_2, \dots, s_d)$ where $s_i$ is the number
 Because each $v_i > T/k$, a machine can process at most $k$ long jobs. Thus, $\sum s_i \le k$. The total number of valid configurations $Q$ is at most $(k+1)^d$. Since $k$ and $d$ are constants, $Q$ is also a constant.
 
 \paragraph{3. Dynamic Programming Formulation:}
-Let the set of distinct rounded job sizes be $\mathcal{V} = \{v_1, v_2, \dots, v_d\}$. We define a state vector $\mathbf{n} = (n_1, n_2, \dots, n_d)$, where each component $n_i$ represents the number of jobs of size $v_i$ to be scheduled.
+Let the set of distinct rounded job sizes be $\mathcal{V} = \{v_1, v_2, \dots, v_d\}$. We define a state vector $\mathbf{n} = (n_1, n_2, \dots, n_d)$, where each component $n_i$ represents the number of jobs of size $v_i$ to be scheduled. 
 
 Let $W(\mathbf{n})$ denote the minimum number of machines of capacity $T$ required to schedule the multiset of jobs defined by $\mathbf{n}$. The recurrence relation is:
 \[ W(\mathbf{n}) = 1 + \min_{\mathbf{s} \in \mathcal{C}} \{ W(\mathbf{n} - \mathbf{s}) \} \]
@@ -26,19 +26,20 @@ where $\mathcal{C}$ is the set of all valid machine configurations $\mathbf{s} =
 \subsection*{Correctness of the DP Formulation}
 
 The correctness of the DP relies on the principle of optimality. Let $\mathbf{n}$ be the vector of job counts.
-
+We will prove by induction on $\sum_{n_i \in n}{n_i}$.
 \paragraph{Proof by Induction:}
 \textbf{Base Case:} $W(\mathbf{0}) = 0$. If no jobs are to be scheduled, zero machines are required, which is optimal.
 
-\textbf{Inductive Step:} Assume $W(\mathbf{n}')$ is the minimum number of machines required for all vectors $\mathbf{n}'$ such that $\sum n'_i < \sum n_i$. To schedule the jobs in $\mathbf{n}$, we must assign a non-empty subset of jobs $\mathbf{s}$ to at least one machine.
+\textbf{Inductive Step:} Assume $W(\mathbf{n}')$ is the minimum number of machines required for all vectors $\mathbf{n}'$ such that $\sum n'_i < \sum n_i$. To schedule the jobs in $\mathbf{n}$, we must assign a non-empty subset of jobs $\mathbf{s}$ to at least one machine. 
 For any valid configuration $\mathbf{s} \in \mathcal{C}$, the remaining jobs are $\mathbf{n} - \mathbf{s}$. By the inductive hypothesis, $W(\mathbf{n} - \mathbf{s})$ is the optimal number of machines for the remaining jobs.
-The total number of machines used for configuration $\mathbf{s}$ is $1 + W(\mathbf{n} - \mathbf{s})$.
+The total number of machines used for configuration $\mathbf{s}$ is $1 + W(\mathbf{n} - \mathbf{s})$. 
 To minimize the total machines, we must minimize over all possible configurations for that machine:
 \[ W(\mathbf{n}) = \min_{\mathbf{s} \in \mathcal{C}} \{ 1 + W(\mathbf{n} - \mathbf{s}) \} \]
-Since the number of distinct configurations $|\mathcal{C}|$ is finite and exhaustive for the capacity $T$, the recurrence correctly identifies the global minimum.
+Since the number of distinct configurations $|\mathcal{C}|$ is finite and exhaustive for the capacity $T$, the recurrence correctly identifies the global minimum. 
 
 
 \paragraph{4. Complexity:}
+State Space Size: The DP table has one entry for every possible vector $\mathbf{n}$. Since each $n_i$ can range from $0$ to $n$ (the total number of jobs), there are $O(n^d)$ possible states.\\Transition Cost: For each state, we iterate over the set $C$, which represents all valid machine configurations.
 The time to fill the table is $O(Q \cdot n^d)$. Substituting $d = O(k^2)$, the complexity is $O(n^{O(k^2)})$. Since $k$ is a constant, this is polynomial in $n$.
 \end{proof}
 
@@ -48,7 +49,7 @@ The time to fill the table is $O(Q \cdot n^d)$. Substituting $d = O(k^2)$, the c
 To prove that the total running time of $\{B_k\}$ is polynomial in the input size, we analyze the three main components of the algorithm: the binary search for $T$, the dynamic programming for long jobs, and the greedy placement of short jobs.
 
 \paragraph{1. Binary Search for $T$:}
-The algorithm searches for the minimum $T$ such that the scheme $\{B_k\}$ returns a valid schedule.
+The algorithm searches for the minimum $T$ such that the scheme $\{B_k\}$ returns a valid schedule. 
 \begin{itemize}
     \item Let $B$ be the size of the input in bits
     \item Let $L = \max \{ \max_j p_j, \frac{1}{m} \sum p_j \}$ and $U = \sum p_j$. The optimal makespan $C_{\max}^*$ must lie in $[L, U]$.
@@ -73,6 +74,8 @@ The total time complexity is the product of the binary search iterations and the
 \[ \text{Total Time} = O\left( \text{B} \cdot (n + n^{O(k^2)} + n \cdot m) \right) \]
 Since $k$ is a constant, the term $n^{O(k^2)}$ dominates, but it remains a polynomial function of $n$. Therefore, the total running time of the $\{B_k\}$ scheme is polynomial in the input size.
 \end{proof}
+\newpage
+
 
 
 \section*{Proof of Lemma 1}
@@ -96,7 +99,7 @@ By definition:
     &= \frac{p(A)^2}{2} - p(A)p_m + \frac{p_m^2}{2} \\
     &= \frac{p(A)^2}{2} - \left( \sum_{j \in A \setminus \{m\}} p_m p_j + \frac{p_m^2}{2} \right)
 \end{align*}
-Subtracting $p_m C_m$ from both sides of the violation inequality \eqref{eq:violation}:
+Subtracting $p_m C_m$ from both sides of the violation inequality (1)
 \begin{align*}
     \sum_{j \in A \setminus \{m\}} p_j C_j &= \sum_{j \in A} p_j C_j - p_m C_m \\
     &< \frac{p(A)^2}{2} - \left( \sum_{j \in A \setminus \{m\}} p_m p_j + \frac{p_m^2}{2} \right) = \frac{p(A \setminus \{m\})^2}{2}
@@ -107,10 +110,12 @@ Thus, $A \setminus \{m\}$ violates the constraint.
 If $p_m C_m < \sum_{j \in A \setminus \{m\}} p_m p_j + \frac{p_m^2}{2}$, then for any $i \in [m] \setminus A$, we show that $A \cup \{i\}$ violates (2).
 Since $C_i \le C_m$ and dividing the case assumption by $p_m$ gives $C_m < \sum_{j \in A \setminus \{m\}} p_j + \frac{p_m}{2}$, we have:
 \begin{align*}
-    p_i C_i \le p_i C_m &< p_i \left( \sum_{j \in A \setminus \{m\}} p_j + \frac{p_m}{2} \right) \\
-    &< \sum_{j \in A} p_i p_j + \frac{p_i^2}{2}
+p_i C_i \le p_i C_m &< p_i \left( \sum_{j \in A \setminus {m}} p_j + \frac{p_m}{2} \right) \
+&= \sum_{j \in A \setminus {m}} p_i p_j + \frac{p_i p_m}{2} \
+&< \sum_{j \in A \setminus {m}} p_i p_j + (p_i p_m) + \frac{p_i^2}{2} \tag{Since $p_i, p_m, p_i^2 > 0$} \
+&= \sum_{j \in A} p_i p_j + \frac{p_i^2}{2}
 \end{align*}
-Adding this to the violation inequality \eqref{eq:violation}:
+Adding this to the violation inequality (1)
 \begin{align*}
     \sum_{j \in A \cup \{i\}} p_j C_j &= \sum_{j \in A} p_j C_j + p_i C_i \\
     &< \frac{p(A)^2}{2} + \sum_{j \in A} p_i p_j + \frac{p_i^2}{2} = \frac{p(A \cup \{i\})^2}{2}
@@ -118,8 +123,8 @@ Adding this to the violation inequality \eqref{eq:violation}:
 Thus, $A \cup \{i\}$ violates the constraint.
 
 \subsection*{Transformation and Contradiction}
-We define a procdeure which, while $A$ is not a prefix set, either removes the maximum element (Case 1) or adds a missing element $i < \max A$ (Case 2).
-We observe that each iteration of the transformation maintains the invariant that the current set $A$ violates constraint (2). To ensure termination, note that each job index $j \in \{1, \dots, n\}$ is either added to or removed from $A$ at most once. Specifically, removing the maximum element $m = \max(A)$ precludes the re-insertion of $m$ or any index $j > m$ into the set. Since there are at most $n$ insertions and $n$ removals, the procedure terminates in $O(n)$ steps.
+We define a procdeure which, while $A$ is not a prefix set, either removes the maximum element (Case 1) or adds a missing element $i < \max A$ (Case 2). 
+We observe that each iteration of the transformation maintains the invariant that the current set $A$ violates constraint (2). To ensure termination, note that each job index $j \in \{1, \dots, n\}$ is either added to or removed from $A$ at most once. Specifically, removing the maximum element $m = \max(A)$ precludes the re-insertion of $m$ or any index $j > m$ into the set. Since there are at most $n$ insertions and $n$ removals, the procedure terminates in $O(n)$ steps. 
 
 
 Upon termination, $A$ cannot be further modified, which occurs if and only if $A$ contains no "gaps" below its maximum element, implying $A$ is a prefix set $S_k = \{1, \dots, k\}$. By our invariant, this terminal set $S_k$ must violate (2), which contradicts the hypothesis that all $n$ prefix sets satisfy the constraint. Thus, no such violating set $A$ can exist.
@@ -128,7 +133,7 @@ Upon termination, $A$ cannot be further modified, which occurs if and only if $A
 \newpage
 \section*{Problem 2}
 \begin{enumerate}[label=(\alph*), leftmargin=*, align=left]
-    \item
+    \item 
     \begin{proof}
         We begin by formulating the linear programming relaxation for the Set Cover problem ($LP_{SC}$):
         \begin{align*}
@@ -157,19 +162,19 @@ Upon termination, $A$ cannot be further modified, which occurs if and only if $A
         By Strong Duality, the value of the optimal dual solution equals the value of the optimal primal solution, meaning $\sum_{i=1}^{n} y^*_i = OPT$. Therefore, the cost of our solution is at most $f \cdot OPT$. Since solving the LP and selecting the sets takes polynomial time, this is a valid polynomial-time $f$-approximation algorithm.
     \end{proof}
 
-    \item
+    \item 
     \begin{proof}
-        Given a Vertex Cover (VC) instance on a graph $G = (V, E)$, we can naturally map it to a Set Cover (SC) instance. Let the universe of elements be the edges $E = \left\{ e_1, \dots, e_n \right\}$. For each vertex $v_j \in V$, we define a set $S_j = \left\{ e_i \in E : v_j \in e_i \right\}$ containing all edges incident to $v_j$. We assign a weight of $1$ to every set.
+        Given a Vertex Cover (VC) instance on a graph $G = (V, E)$, we can naturally map it to a Set Cover (SC) instance. Let the universe of elements be the edges $E = \left\{ e_1, \dots, e_n \right\}$. For each vertex $v_j \in V$, we define a set $S_j = \left\{ e_i \in E : v_j \in e_i \right\}$ containing all edges incident to $v_j$. We assign a weight of $1$ to every set. 
 
         In the lecture we saw that
         this problem is equivalent to the original VC problem.
         Therefore, because every edge in a standard graph(no self loops) connects exactly two vertices, each element in our SC instance appears in exactly $2$ sets. Therefore, the maximum frequency of any element is $f = 2$.
-
+        
         Applying the $f$-approximation algorithm from part (a) to this SC instance will yield a solution with a cost of at most $2 \cdot OPT$. The transformation requires $O(|V| + |E|)$ time, which is polynomial, additionally getting the solution for vertex cover from the set cover solution can be done in polynomial time by taking the vertices that represent the sets in the solution. making this a valid $2$-approximation for Vertex Cover.
     \end{proof}
 
-    \item Let $y_i \in \left\{ 0, 1 \right\}$ be an indicator variable representing the truth value assigned to $x_i$, where $y_i = 1$ implies True and $y_i = 0$ implies False.
-
+    \item Let $y_i \in \left\{ 0, 1 \right\}$ be an indicator variable representing the truth value assigned to $x_i$, where $y_i = 1$ implies True and $y_i = 0$ implies False. 
+    
     For any literal $z$, we define its algebraic value $v(z)$ as follows:
     \begin{itemize}
         \item If $z = x_i$, then $v(z) = y_i$.
@@ -182,10 +187,10 @@ Upon termination, $A$ cannot be further modified, which occurs if and only if $A
         & y_i \in \left\{ 0, 1 \right\} \quad \forall i \in [n]
     \end{align*}
 
-    \item
+    \item 
     \begin{proof}
         We first check if the given 2-SAT instance is satisfiable in polynomial time (since 2-SAT $\in$ P). If it is unsatisfiable, we terminate. Otherwise, we relax the ILP to a continuous Linear Program by replacing the integrality constraint with $0 \le y_i \le 1$ for all $i \in [n]$.
-
+        
         Let $y^*$ be the optimal fractional solution to this LP. We apply the following rounding algorithm to produce an assignment $v(x_i)$:
         \begin{enumerate}
             \item If $y^*_i > \frac{1}{2}$, set $v(x_i) = 1$.
@@ -197,13 +202,13 @@ Upon termination, $A$ cannot be further modified, which occurs if and only if $A
             The residual 2-SAT formula, formed by simplifying the clauses with the deterministically assigned variables, remains satisfiable.
         \end{lemma}
         \begin{proof}[Proof of Lemma]
-            Assume for contradiction that the residual formula is unsatisfiable. This implies that the partial assignment falsified a clause entirely, meaning both of its literals were assigned $0$. For a literal to evaluate to $0$ in our rounding scheme, its corresponding LP value must have been strictly less than $\frac{1}{2}$. Thus, for the falsified clause $c_j = z_{j1} \vee z_{j2}$, we must have had $v(z_{j1})^* < \frac{1}{2}$ and $v(z_{j2})^* < \frac{1}{2}$.
-
+            Assume for contradiction that the residual formula is unsatisfiable. This implies that the partial assignment falsified a clause entirely, meaning both of its literals were assigned $0$. For a literal to evaluate to $0$ in our rounding scheme, its corresponding LP value must have been strictly less than $\frac{1}{2}$. Thus, for the falsified clause $c_j = z_{j1} \vee z_{j2}$, we must have had $v(z_{j1})^* < \frac{1}{2}$ and $v(z_{j2})^* < \frac{1}{2}$. 
+            
             Summing these gives $v(z_{j1})^* + v(z_{j2})^* < 1$, which strictly violates the LP constraint for clause $c_j$. This is a contradiction, confirming the remaining formula is satisfiable.
         \end{proof}
 
-        Because the residual problem is a valid, satisfiable 2-SAT instance, we can use a standard polynomial-time 2-SAT solver to find a satisfying assignment for the remaining variables (those where $y^*_i = \frac{1}{2}$).
-
+        Because the residual problem is a valid, satisfiable 2-SAT instance, we can use a standard polynomial-time 2-SAT solver to find a satisfying assignment for the remaining variables (those where $y^*_i = \frac{1}{2}$). 
+        
         To establish the approximation ratio, observe the relationship between our final assignment $v(x_i)$ and the optimal LP values $y^*_i$:
         \begin{itemize}
             \item If $y^*_i > \frac{1}{2}$, we set $v(x_i) = 1$, which respects $v(x_i) < 2y^*_i$.
@@ -263,7 +268,7 @@ Combining these elements, the exact Integer Program for the Facility Location pr
 
 
 \textbf{Relaxation to LP:}
-The LP provided in the problem is the \textit{linear relaxation} of this IP. By relaxing the integer constraints $x_{ij}, y_i \in \{0, 1\}$ to the continuous box constraints $x_{ij}, y_i \in [0, 1]$, we expand the feasible region.
+The LP provided in the problem is the \textit{linear relaxation} of this IP. By relaxing the integer constraints $x_{ij}, y_i \in \{0, 1\}$ to the continuous box constraints $x_{ij}, y_i \in [0, 1]$, we expand the feasible region. 
 
 \textbf{Conclusion:}
 Let $S_{IP}$ be the set of integer-feasible points and $S_{LP}$ be the set of fractional-feasible points. Since $S_{IP} \subset S_{LP}$, it follows that:
@@ -278,8 +283,8 @@ Let $(x, y)$ be an optimal fractional solution to the LP, Let $C_j = \sum_{i \in
 
 \subsection*{1. Proving Inequality (1): $\sum_{i \in F} \tilde{x}_{ij} \ge 1$}
 \begin{proof}
-Suppose, for the sake of contradiction, that $\sum_{i \in F} \tilde{x}_{ij} < 1$, thus \[ \sum_{i \in F} \tilde{x}_{ij} < 1 \rightarrow \sum_{i \in F_j} 4x_{ij} < 1 \rightarrow  \sum_{i \in F_j} x_{ij} < \frac{1}{4}\].
-Since the LP constraint (1) ensures $\sum_{i \in F} x_{ij} \ge 1$, it must be that $\sum_{i \notin F_j} x_{ij} > \frac{3}{4}$.
+Suppose, for the sake of contradiction, that $\sum_{i \in F} \tilde{x}_{ij} < 1$, thus \[ \sum_{i \in F} \tilde{x}_{ij} < 1 \rightarrow \sum_{i \in F_j} 4x_{ij} < 1 \rightarrow  \sum_{i \in F_j} x_{ij} < \frac{1}{4}\]. 
+Since the LP constraint (1) ensures $\sum_{i \in F} x_{ij} \ge 1$, it must be that $\sum_{i \notin F_j} x_{ij} > \frac{3}{4}$. 
 By definition, for any $i \notin F_j$, we have $d_{ij} > \frac{4}{3} C_j$. Then:
 \[
 C_j = \sum_{i \in F} d_{ij} x_{ij} \ge \sum_{i \notin F_j} d_{ij} x_{ij} > \sum_{i \notin F_j} \left( \frac{4}{3} C_j \right) x_{ij} = \frac{4}{3} C_j \sum_{i \notin F_j} x_{ij}
@@ -296,19 +301,20 @@ We get $C_j > C_j$, which is a contradiction Therefore, inequality (1) is satisf
 The solution $(\tilde{x}, y)$ \textbf{does not} necessarily satisfy $y_i \ge \tilde{x}_{ij}$.
 \begin{proof}
 Consider a client $j$ and 4 facilities where $d_{ij} = 1$ and $f_i = 1$ for all $i$. Let the LP solution be $y_i = 0.25$ and $x_{ij} = 0.25$ for $i \in \{1, 2, 3, 4\}$. It is easy to see that this is an optimal solution for the LP.
-Here, $C_j = 1$, so all facilities are ``close'' ($\le \frac{4}{3}$).
+Here, $C_j = 1$, so all facilities are ``close'' ($\le \frac{4}{3}$). 
 Then $\tilde{x}_{ij} = 4 x_{ij} = 4(0.25) = 1$.
 However, $y_i = 0.25$. Since $0.25 < 1$, the constraint $y_i \ge \tilde{x}_{ij}$ is violated.
 \end{proof}
 
 
+\newpage
 \subsection*{Part (c):}
 
 Let $(x, y)$ be an optimal solution to the LP relaxation. For each client $j \in C$, let $C_j = \sum_{i \in F} d_{ij} x_{ij}$ be its fractional connection cost. We define the set of facilities ``close'' to client $j$ as $F_j = \{ i \in F : d_{ij} \le \frac{4}{3} C_j \}$.
 
 \subsubsection*{The Algorithm}
 \begin{enumerate}
-    \item Let $U = C$ be the set of unassigned clients, and let $S =
+    \item Let $U = C$ be the set of unassigned clients, and let $S = 
     \emptyset$ be the set of opened facilities.
     \item Solve the LP and obtain and optimal solution $(x,y)$.
     \item For each client $j \in C$, calculate $C_j = \sum_{i \in F} d_{ij} x_{ij}$ and $F_j = \{ i \in F : d_{ij} \le \frac{4}{3} C_j \}$
@@ -316,7 +322,7 @@ Let $(x, y)$ be an optimal solution to the LP relaxation. For each client $j \in
     \begin{enumerate}
         \item Select a ``center'' client $j \in U$ that minimizes $C_j$.
         \item Open the facility $i^* \in F_j$ that minimizes the opening cost $f_i$. Add $i^*$ to $S$.
-        \item Assign client $j$ and all currently unassigned clients $k \in U$ such that $F_k \cap F_j \neq \emptyset$ to the facility $i^*$.
+        \item Assign client $j$ and all currently unassigned clients $k \in U$ such that $F_k \cap F_j \neq \emptyset$ to the facility $i^*$. 
         \item Remove all clients assigned in the previous step from $U$.
     \end{enumerate}
     \item return $S$
@@ -331,14 +337,14 @@ We will bound the total facility opening cost and the total connection cost rela
 
 \subsubsection*{Bounding the Facility Opening Cost}
 From part(b) we can conclude that the following inequality holds
-\[ \sum_{i \in F} \tilde{x}_{ij} \ge 1 \rightarrow \sum_{i \in F_j} 4x_{ij} \ge 1 \rightarrow  \sum_{i \in F_j} x_{ij} \ge \frac{1}{4}\].
+\[ \sum_{i \in F} \tilde{x}_{ij} \ge 1 \rightarrow \sum_{i \in F_j} 4x_{ij} \ge 1 \rightarrow  \sum_{i \in F_j} x_{ij} \ge \frac{1}{4}\]. 
 Since the LP constraints require $y_i \ge x_{ij}$ for all $i, j$, it follows that $\sum_{i \in F_j} y_i \ge 1/4$.
 
 When the algorithm processes client $j$ and opens $i^* \in F_j$, it chooses the absolute cheapest facility in $F_j$. The cost $f_{i^*}$ can be bounded by the weighted average cost of facilities in $F_j$:
 \[ f_{i^*} \le \frac{\sum_{i \in F_j} f_i y_i}{\sum_{i \in F_j} y_i} \le \frac{\sum_{i \in F_j} f_i y_i}{1/4} = 4 \sum_{i \in F_j} f_i y_i \]
 
 Let $J$ be the set of ``center'' clients chosen in step 4(a). By the removal condition in step 3(d), for any two distinct center clients $j, j' \in J$, their close facility sets are completely disjoint ($F_j \cap F_{j'} = \emptyset$). Because these sets are disjoint, we can safely sum their costs without overcounting any fractional $y_i$ mass:
-\[ \sum_{i \in S_{alg}} f_{i} = \sum_{j \in J} f_{i^*(j)} \le \sum_{j \in J} 4 \sum_{i \in F_j} f_i y_i \le 4 \sum_{i \in F} f_i y_i \]
+\[ \sum_{i \in S_{alg}} f_{i} = \sum_{j \in J} f_{i^*(j)} \le \sum_{j \in J} 4 \sum_{i \in F_j} f_i y_i \le 4 \sum_{i \in F} f_i y_i \] 
 where $f_{i^*(j)}$ is the facility assigned to client $j$, and the first equality holds because facilities are only opened by center clients( clients chosen in step 4(a)).
 
 \subsubsection*{Bounding the Connection Cost}
@@ -368,3 +374,6 @@ Adding the bounded facility opening costs and connection costs together, the tot
 Since an optimal solution to the LP is a lower bound on the Facility Location problem(shown in part(a)).
 
 \subsection*{Complexity Analysis:} The LP runs in $O(poly(n))$ time. The calculation of $C_j, F_j$ can be done in $O(n)$ time for each j, Therefore a total of $O(n^2)$ for all clients. The loop has at most $|C|$ iterations and each iteration can be done trivially in $O(n^2)$ time. Therefore, the loop is bound by $O(n^3)$. In total the runtime is $max(poly(n), O(n^3))$ where $poly(n)$ is the runtime of the LP
+
+
+
