@@ -24,14 +24,11 @@ the value of an optimal solution. Suggest an APTAS for Bin Packing with Trees.
 \textbf{Solution outline} - First we will divide the items into large and small ones, the large ones into intervals of sizes, and we will round the sizes of the items in each interval to the maximum size in the interval. Then we will use the Karmarkar-Karp algorithm to get an APTAS for the abstracted sizes, we will resolve the conflicts, and at last we will add the small items to the bins.
 
 \subsubsection*{Conflict resolution}
-Now we will describe conflict resolution algorithm for tree conflict
-graph, the idea is to sort the vertices in such order that at most
-one of the neighbors came before it in the order. Given such order,
-and an abstracted solution, we can resolve the conflicts by matching
-the vertices to items in the abstracted solution which are of the
-same abstracted size, and there won't be any conflicts. if there is no such item, we can put the vertex in a new bin. Since the order guarantees that at most one of the neighbors came before it, there can only be a conflict if there is less than on item of the same abstracted size, thus the number of conflicts is at most the number of abstracted sizes.
+Now we will describe a conflict resolution algorithm for a tree conflict graph. The input $AbstractedBins$ is the solution produced by Karmarkar-Karp on the rounded instance: a list of bins, where each bin is a multiset of abstracted sizes (one slot per large item assigned to it). The goal is to assign each real item $i \in Large$ to a slot whose abstracted size equals $i$'s abstracted size, such that no two adjacent items share a bin.
 
-here is an algorithm that finds the desired order of the vertices in the tree:
+The idea is to order the vertices so that at most one neighbor precedes each vertex. Given such an order, we greedily assign each vertex to an available slot of its abstracted size in a bin that contains no already-assigned neighbor. If no such bin exists, we open a new bin.
+
+Here is an algorithm that finds the desired order of the vertices in the tree:
 \begin{algorithm}
   \caption{1-inductive tree ordering}
   \begin{algorithmic}[1]
@@ -41,8 +38,6 @@ here is an algorithm that finds the desired order of the vertices in the tree:
     \EndProcedure
   \end{algorithmic}
 \end{algorithm}
-
-\textbf{Complexity analysis} - BFS runs in $O(|V| + |E|) = O(n)$ since $|E| = n - 1$ for a tree on $n$ vertices.
 
 \begin{claim}
 The order returned by the algorithm is a 1-inductive order.
@@ -62,13 +57,17 @@ neighbor.
   \caption{Conflict resolution for Bin Packing with Trees}
   \begin{algorithmic}[1]
     \Procedure{ConflictResolution}{$AbstractedBins, T$}
-    \State $Order \gets$ OneInductiveTreeOrdering($T$)
+    \Comment{$AbstractedBins$: list of bins with slots of abstracted sizes}
+    \State $Order \gets$ \Call{OneInductiveTreeOrdering}{$T$}
 
     \State $ResolvedBins \gets []$
     \State \For each vertex $v$ in $Order$
-      \State Find all the bins in $AbstractedBins$ that contain an item of the same abstracted size as $v$, and isn't matched to any vertex yet.
-      \If there is such a bin $B$ that does not contain any neighbor of $v$ in $T$
-        \State Add $v$ to $B$ and add $B$ to $ResolvedBins$
+      \State $\hat{s}_v \gets$ abstracted size of $v$
+      \State Let $S$ be the set of bins in $AbstractedBins$ with an unmatched slot of size $\hat{s}_v$
+      \State Filter $S$ to only include bins that do \emph{not} contain any already-matched neighbor of $v$
+
+      \If $S$ is not empty
+        \State Pick a bin $B \in S$, claim one slot of size $\hat{s}_v$ in $B$ for $v$, and add $B$ to $ResolvedBins$
       \Else
         \State Create a new bin $B'$, add $v$ to $B'$, and add $B'$ to $ResolvedBins$
       \EndIf
@@ -80,24 +79,30 @@ neighbor.
     \end{algorithmic}
 \end{algorithm}
 
-\textbf{Complexity analysis} - We have at most $O(n)$ bins each containing at most $O(n)$ items, so we can find the desired bin for each vertex in $O(n^2)$ time, thus the overall complexity of the conflict resolution algorithm is $O(n^3)$.
+\textbf{Complexity analysis} - BFS runs in $O(n)$ time. We have at most $O(n)$ bins each containing at most $O(1/\eps)$ items. For each of the $n$ vertices, we can find and filter the available bins in $O(n)$ time. Thus, the overall complexity of the conflict resolution algorithm is $O(n^2)$.
 
 \begin{claim}
 The solution returned is conflict-free and feasible.
 \end{claim}
 
 \begin{proof}
-Since we don't add a vertex to a bin that contains one of its neighbors, the solution respects the conflict constraints.
-Since we add a vertex to a bin that contains an item of the same abstracted size (the abstracted size is larger than the vertex's size), or to a new bin, the real total size of the items in each bin is at most 1, so the solution is feasible.
+By design, the algorithm never adds a vertex to a bin that already contains one of its neighbors, ensuring the solution is conflict-free. Furthermore, since rounding was upward, every item's real size satisfies $s_i \leq \hat{s}_i$. Therefore, the total real size of items placed in any bin from $AbstractedBins$ is at most the sum of their abstracted sizes, which is at most 1 (since $AbstractedBins$ is a feasible packing of the abstracted sizes). Any new bin created contains only a single item of size at most 1, so these are also feasible.
 \end{proof}
 
 \begin{claim}
-The number of extra bins added is at most the number of distinct abstracted sizes.
+The number of extra bins added is at most $\lfloor 1/\eps \rfloor$ times the number of distinct abstracted sizes.
 \end{claim}
 
 \begin{proof}
-Since the order is 1-inductive, $v$ has at most one already-placed neighbor $p$, which occupies exactly one bin and thus blocks at most one unmatched slot of $v$'s abstracted size. A new bin is therefore forced only when at most one unmatched slot of that size remains — the one blocked by $p$. Since this exhausts all remaining slots of that size, it can happen at most once per distinct abstracted size.
+The number of extra bins opened for items of a specific abstracted size $s$ is exactly equal to the number of slots of size $s$ in $AbstractedBins$ that are left empty (wasted) at the end of the algorithm.
+
+Consider the first time a vertex $v$ of size $s$ is forced into a new bin. This happens because all remaining unmatched slots of size $s$ are located in bins that contain an already-placed neighbor of $v$. Since the vertex order is 1-inductive, $v$ has at most one already-placed neighbor, let's call it $p$. Therefore, \emph{all} available slots of size $s$ must be located within the single bin $B_p$ that contains $p$.
+
+Because all remaining slots of size $s$ are isolated to $B_p$, any slots of size $s$ that are ultimately left empty must also reside in $B_p$. Since every large item has a size of at least $\eps$, any bin can contain at most $\lfloor 1/\eps \rfloor$ items in total. Thus, $B_p$ contains at most $\lfloor 1/\eps \rfloor$ slots of size $s$. Consequently, at most $\lfloor 1/\eps \rfloor$ slots of size $s$ can be wasted across the entire algorithm, meaning at most $\lfloor 1/\eps \rfloor$ extra bins are opened for items of size $s$.
+
+Summing over all distinct abstracted sizes, the total number of extra bins is at most $\lfloor 1/\eps \rfloor \cdot m$, where $m$ is the number of distinct abstracted sizes.
 \end{proof}
+
 
 \subsubsection*{Putting it all together}
 Finally, we will describe the APTAS for Bin Packing with Trees.
