@@ -61,12 +61,12 @@ neighbor.
     \State $Order \gets$ \Call{OneInductiveTreeOrdering}{$T$}
 
     \State $ResolvedBins \gets []$
-    \State \For each vertex $v$ in $Order$
+    \For{each vertex $v$ in $Order$}
       \State $\hat{s}_v \gets$ abstracted size of $v$
       \State Let $S$ be the set of bins in $AbstractedBins$ with an unmatched slot of size $\hat{s}_v$
       \State Filter $S$ to only include bins that do \emph{not} contain any already-matched neighbor of $v$
 
-      \If $S$ is not empty
+      \If{$S$ is not empty}
         \State Pick a bin $B \in S$, claim one slot of size $\hat{s}_v$ in $B$ for $v$, and add $B$ to $ResolvedBins$
       \Else
         \State Create a new bin $B'$, add $v$ to $B'$, and add $B'$ to $ResolvedBins$
@@ -103,6 +103,55 @@ Because all remaining slots of size $s$ are isolated to $B_p$, any slots of size
 Summing over all distinct abstracted sizes, the total number of extra bins is at most $\lfloor 1/\eps \rfloor \cdot m$, where $m$ is the number of distinct abstracted sizes.
 \end{proof}
 
+
+\subsection*{Packing small items}
+Since the conflict graph is a tree, it is bipartite, and we can 2-color the vertices. We will pack the small items greedily into the bins, and those that cannot be packed will be put in new bins according to their color.
+
+\begin{algorithm}
+  \caption{Packing small items for Bin Packing with Trees}
+  \begin{algorithmic}[1]
+    \Procedure{PackSmallItems}{$Bins, Small, T$}
+      \State 2-color the vertices of $T$ with colors $1$ and $2$
+
+      \State Let $NewBins[1]$ and $NewBins[2]$ be empty bins
+
+      \For{each $i \in Small$}
+        \State $packed \gets \text{false}$
+        \For{each $B \in Bins$}
+          \If{sum of sizes in $B + s_i \leq 1$ \textbf{and} $B$ contains no neighbor of $i$}
+            \State Add $i$ to $B$
+            \State $packed \gets \text{true}$
+            \State \textbf{break}
+          \EndIf
+        \EndFor
+        \If{\textbf{not} $packed$}
+          \State $c \gets \text{color of } i$
+          \If{sum of sizes in $NewBins[c] + s_i > 1$}
+            \State Add $NewBins[c]$ to $Bins$
+            \State $NewBins[c] \gets \text{empty bin}$
+          \EndIf
+          \State Add $i$ to $NewBins[c]$
+        \EndIf
+      \EndFor
+
+      \State Add any non-empty $NewBins[1]$ and $NewBins[2]$ to $Bins$
+
+      \State \Return $Bins$
+    \EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+
+\textbf{Complexity analysis} - 2-coloring the tree takes $O(n)$ time using BFS or DFS. The algorithm iterates over at most $n$ small items, and for each item, it checks at most $O(n)$ bins to see if it fits and has no conflicts. Checking for conflicts and capacity constraints can be done efficiently, leading to an overall running time of $O(n^2)$.
+
+\begin{claim}
+This algorithm yields a feasible packing of the small items.
+\end{claim}
+
+\begin{proof}
+First, the capacity constraint is maintained: an item of size $s_i$ is only added to an existing bin if the sum of sizes including $s_i$ is at most 1. For the new color-specific bins, a fresh bin is opened if the capacity would exceed 1. Thus, no bin exceeds the size limit of 1.
+
+Second, the conflict-free constraint is maintained. When adding to an existing bin, the algorithm explicitly verifies that the bin contains no neighbor of the item. When an item is placed in a new bin, it is grouped only with other items of the same color from the valid 2-coloring of the tree. Since adjacent vertices in a tree (which is bipartite) must have different colors, no two items of the same color can be neighbors. Therefore, the new bins are also strictly conflict-free. Thus, the resulting packing is feasible.
+\end{proof}
 
 \subsubsection*{Putting it all together}
 Finally, we will describe the APTAS for Bin Packing with Trees.
