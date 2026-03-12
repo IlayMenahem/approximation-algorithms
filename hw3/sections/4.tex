@@ -90,17 +90,17 @@ By design, the algorithm never adds a vertex to a bin that already contains one 
 \end{proof}
 
 \begin{claim}
-The number of extra bins added is at most $\lfloor 1/\eps \rfloor$ times the number of distinct abstracted sizes.
+The number of extra bins added is a constant depending only on $\eps$.
 \end{claim}
 
 \begin{proof}
-The number of extra bins opened for items of a specific abstracted size $s$ is exactly equal to the number of slots of size $s$ in $AbstractedBins$ that are left empty (wasted) at the end of the algorithm.
+Let $\hat{s}$ be a specific abstracted size. A new bin is opened for an item $v$ of size $\hat{s}$ only if all bins in $AbstractedBins$ with an unmatched slot of size $\hat{s}$ are filtered out. Since $v$ has at most one already-matched neighbor (from the 1-inductive order), it can filter out at most one bin. This implies that when a new bin is opened for size $\hat{s}$, all currently unmatched slots of size $\hat{s}$ must be contained in a single bin.
 
-Consider the first time a vertex $v$ of size $s$ is forced into a new bin. This happens because all remaining unmatched slots of size $s$ are located in bins that contain an already-placed neighbor of $v$. Since the vertex order is 1-inductive, $v$ has at most one already-placed neighbor, let's call it $p$. Therefore, \emph{all} available slots of size $s$ must be located within the single bin $B_p$ that contains $p$.
+Because all large items have size at least $\eps$, any single bin can contain at most $\lfloor 1/\eps \rfloor$ slots. Therefore, at the moment the first new bin is opened for size $\hat{s}$, there are at most $\lfloor 1/\eps \rfloor$ unmatched slots of size $\hat{s}$ remaining in total.
 
-Because all remaining slots of size $s$ are isolated to $B_p$, any slots of size $s$ that are ultimately left empty must also reside in $B_p$. Since every large item has a size of at least $\eps$, any bin can contain at most $\lfloor 1/\eps \rfloor$ items in total. Thus, $B_p$ contains at most $\lfloor 1/\eps \rfloor$ slots of size $s$. Consequently, at most $\lfloor 1/\eps \rfloor$ slots of size $s$ can be wasted across the entire algorithm, meaning at most $\lfloor 1/\eps \rfloor$ extra bins are opened for items of size $s$.
+Since the total number of items of size $\hat{s}$ equals the total number of slots of size $\hat{s}$ in $AbstractedBins$, every time we place an item of size $\hat{s}$ into a new bin, one slot of size $\hat{s}$ in $AbstractedBins$ will permanently remain empty. Consequently, the total number of new bins we can possibly open for size $\hat{s}$ is bounded by the number of available slots for size $\hat{s}$ when the first such new bin is created, which is at most $\lfloor 1/\eps \rfloor$.
 
-Summing over all distinct abstracted sizes, the total number of extra bins is at most $\lfloor 1/\eps \rfloor \cdot m$, where $m$ is the number of distinct abstracted sizes.
+There are at most $m = \lceil 1/\eps^2 \rceil$ distinct abstracted sizes. Thus, the total number of extra bins created across all sizes is at most $\lceil 1/\eps^2 \rceil \cdot \lfloor 1/\eps \rfloor \leq 1/\eps^3 + 1/\eps^2$, which is a constant depending only on $\eps$.
 \end{proof}
 
 
@@ -112,26 +112,28 @@ Since the conflict graph is a tree, it is bipartite, and we can 2-color the vert
   \begin{algorithmic}[1]
     \Procedure{PackSmallItems}{$Bins, Small, T$}
       \State 2-color the vertices of $T$ with colors $1$ and $2$
-
+      \State Let $Small_1, Small_2$ be the small items of colors $1$ and $2$
       \State Let $NewBins[1]$ and $NewBins[2]$ be empty bins
 
-      \For{each $i \in Small$}
-        \State $packed \gets \text{false}$
-        \For{each $B \in Bins$}
-          \If{sum of sizes in $B + s_i \leq 1$ \textbf{and} $B$ contains no neighbor of $i$}
-            \State Add $i$ to $B$
-            \State $packed \gets \text{true}$
-            \State \textbf{break}
+      \For{each $c \in \{1, 2\}$}
+        \For{each $i \in Small_c$}
+          \State $packed \gets \text{false}$
+          \For{each $B \in Bins$}
+            \State \textbf{if} $c = 2$ \textbf{and} $B \cap Small_1 \neq \emptyset$ \textbf{then continue}
+            \If{sum of sizes in $B + s_i \leq 1$ \textbf{and} $B$ contains no neighbor of $i$}
+              \State Add $i$ to $B$
+              \State $packed \gets \text{true}$
+              \State \textbf{break}
+            \EndIf
+          \EndFor
+          \If{\textbf{not} $packed$}
+            \If{sum of sizes in $NewBins[c] + s_i > 1$}
+              \State Add $NewBins[c]$ to $Bins$
+              \State $NewBins[c] \gets \text{empty bin}$
+            \EndIf
+            \State Add $i$ to $NewBins[c]$
           \EndIf
         \EndFor
-        \If{\textbf{not} $packed$}
-          \State $c \gets \text{color of } i$
-          \If{sum of sizes in $NewBins[c] + s_i > 1$}
-            \State Add $NewBins[c]$ to $Bins$
-            \State $NewBins[c] \gets \text{empty bin}$
-          \EndIf
-          \State Add $i$ to $NewBins[c]$
-        \EndIf
       \EndFor
 
       \State Add any non-empty $NewBins[1]$ and $NewBins[2]$ to $Bins$
@@ -160,14 +162,16 @@ Finally, we will describe the APTAS for Bin Packing with Trees.
   \begin{algorithmic}[1]
     \Procedure{BinPackingWithTrees}{$I, T, \eps$}
     % separate the items into small and large items
-    \State $m \gets \lceil \frac{1}{\eps^2} \rceil$
-    \State $Small \gets \{i \mid i \in I, s_i < \eps\}$
+    \State $m = \lceil (\frac{2}{\eps})^2 \rceil$
+    \State $Small \gets \{i \mid i \in I, s_i < \frac{\eps}{2}\}$
     \State $Large \gets I \setminus Small$
-    \State $Groups \gets \{G_1, G_2, \ldots, G_m\}$ where $G_j = \{i \in Large \mid s_i \in ((j-1)\eps^2, j\eps^2]\}$
-    \State for each $j \in [m]$ and $i \in G_j$, set $s_i \gets \max_{i' \in G_j} s_{i'}$
+    % round the sizes of the large items
+    \State sort $Large$ in non-increasing order of size
+    \State Partition $Large$ into $m$ groups $G_1, G_2, \ldots, G_m$ of sizes as equal as possible
+    \State For each $j \in [m]$ and $i \in G_j$, set $\hat{s}_i \gets \max_{i' \in G_j} s_{i'}$
 
     % get an APTAS for the abstracted sizes
-    \State $Bins \gets$ standard APTAS($Large, \eps$)
+    \State $Bins \gets$ standard APTAS($Large, \frac{\eps}{2}$)
 
     % resolve the conflicts
     \State $Bins \gets$ ConflictResolution($Bins, T$)
@@ -193,9 +197,30 @@ The algorithm's running time is dominated by the conflict resolution and small i
 
 \subsection*{Approximation ratio analysis}
 \begin{claim}
-For a given $\eps > 0$, the algorithm returns a packing into at most $(1 + \eps)\text{OPT} + c$ bins.
+For a given $\eps > 0$, the algorithm returns a packing into at most $(1 + \eps)\text{OPT} + c_\eps$ bins.
 \end{claim}
 
 \begin{proof}
+Let $\text{OPT}$ be the optimal number of bins for the original instance.
+The standard APTAS for the large items (with parameter $\eps/2$) produces a packing of the abstracted sizes into $m_{abstract} \leq (1 + \eps/2)\text{OPT} + c$ bins, where $c$ is a constant.
 
+The \textsc{ConflictResolution} algorithm then produces a valid packing for the real large items, opening at most $c_{conflict} \leq 1/(\eps/2)^3 + 1/(\eps/2)^2$ additional bins, as proven earlier. Let $m_{large} = m_{abstract} + c_{conflict}$ be the total number of bins before packing small items. We have $m_{large} \leq (1 + \eps/2)\text{OPT} + c'$, where $c'$ is a constant depending only on $\eps$.
+
+Next, consider the \textsc{PackSmallItems} phase. Let $U$ be the set of bins from the $m_{large}$ bins that are strictly less than $(1 - \eps/2)$ full. Any small item $i$ has size $s_i < \eps/2$, so it would fit into any bin in $U$ without violating the capacity constraint.
+
+If an item $i$ is placed into a new color-specific bin, it must have been rejected by all bins in $U$. Since it fits by capacity, it must be rejected due to a conflict. This means $i$ has at least one neighbor in every bin in $U$.
+
+Let $S'_c$ be the set of small items of color $c \in \{1, 2\}$ that are placed into new bins. Consider $S'_1$ first. When placing items of $Small_1$, no other small items have been packed yet. Thus, any conflict must be with a large item. Let $V_U$ be the set of large items packed in the bins of $U$. Since all large items have size at least $\eps/2$, each bin in $U$ contains at most $\lfloor 2/\eps \rfloor$ items. Thus, $|V_U| \leq |U| \cdot \lfloor 2/\eps \rfloor$.
+
+The edges between $S'_1$ and $V_U$ form a bipartite subgraph of the tree $T$, which must be a forest. In a forest, the number of edges is strictly less than the number of vertices. Since every item in $S'_1$ has at least one large neighbor in every bin in $U$, there are at least $|S'_1| \cdot |U|$ edges. Therefore:
+\[ |S'_1| \cdot |U| \leq |S'_1| + |V_U| - 1 \implies |S'_1|(|U| - 1) < |U| \cdot \lfloor 2/\eps \rfloor \]
+The exact same logic applies to $S'_2$: because the algorithm explicitly forbids packing $Small_2$ into bins containing $Small_1$, any conflicts that force an item in $Small_2$ into a new bin must also be with large items in $V_U$. Thus, $|S'_2|(|U| - 1) < |U| \cdot \lfloor 2/\eps \rfloor$.
+
+We consider two cases for $|U|$:
+\begin{itemize}
+    \item \textbf{Case 1: $|U| \geq 2$.} Then for each color $c$, $|S'_c| < \frac{|U|}{|U|-1} \lfloor 2/\eps \rfloor \leq 2 \lfloor 2/\eps \rfloor \leq 4/\eps$. This means at most $8/\eps$ small items are placed into new bins in total. Since each new bin contains items of the same color, and we only open a new bin when capacity is exceeded, these items will open at most $O(1/\eps)$ new bins. The total number of bins is $m_{large} + O(1/\eps) \leq (1 + \eps/2)\text{OPT} + c_\eps \leq (1 + \eps)\text{OPT} + c_\eps$.
+    \item \textbf{Case 2: $|U| \leq 1$.} This means all but at most one of the $m_{large}$ bins are filled to at least $1 - \eps/2$. Let $m_{total}$ be the final number of bins. All newly opened bins (except possibly the last one for each color) are also filled to at least $1 - \eps/2$. Thus, at least $m_{total} - 3$ bins have a sum of sizes greater than $1 - \eps/2$. The total size of all items in the instance, which is a lower bound on OPT, is at least $(m_{total} - 3)(1 - \eps/2)$.
+    Therefore, $m_{total} \leq \frac{\text{OPT}}{1 - \eps/2} + 3$. For $\eps \leq 1$, $\frac{1}{1 - \eps/2} \leq 1 + \eps$. So $m_{total} \leq (1 + \eps)\text{OPT} + 3$.
+\end{itemize}
+In both cases, the final number of bins is bounded by $(1 + \eps)\text{OPT} + c_\eps$ for some constant $c_\eps$ depending only on $\eps$, satisfying the definition of an APTAS.
 \end{proof}
