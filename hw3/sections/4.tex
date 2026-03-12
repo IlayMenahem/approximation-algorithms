@@ -185,7 +185,7 @@ The solution returned is feasible.
 \end{claim}
 
 \begin{proof}
-
+By the previous claims, each step of the algorithm maintains feasibility. The \textsc{ConflictResolution} algorithm ensures that all large items are packed into bins such that the sum of their actual sizes is at most 1, and no two adjacent items share a bin. The \textsc{PackSmallItems} algorithm guarantees that the addition of small items also respects both the capacity constraint and the conflict-free constraint. Since every item (both large and small) is placed into some bin without violating these constraints, the final solution is feasible.
 \end{proof}
 
 \subsection*{Running time analysis}
