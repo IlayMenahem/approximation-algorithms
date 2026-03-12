@@ -32,3 +32,44 @@ which maximizes the profit.
 rounding the basic variable $x^B_j$. Let $F$ be the subset of items
 $j$ for which $x^B_j$ is fractional, i.e., $x^I_j < x^B_j$. Show that
 $|F| \leq d$.
+
+\subsection*{Formulation of LP(S)}
+The linear programming relaxation $LP(S)$ can be formulated as follows:
+
+\textbf{Maximize:}
+\[ \sum_{j \in I} p_j x_j \]
+
+\textbf{Subject to:}
+\begin{align*}
+    \sum_{j \in I} s_{ij} x_j &\leq b_i && \forall i \in \{1, \ldots, d\} \\
+    x_j &= 1 && \forall j \in S \\
+    x_j &= 0 && \forall j \in I \setminus (S \cup \text{Good}(S)) \\
+    0 \leq x_j &\leq 1 && \forall j \in \text{Good}(S)
+\end{align*}
+
+
+\subsection*{Bounding the number of fractional variables}
+Let $x^B$ be a basic feasible solution to $LP(S)$. There are $n$ variables in the linear program. In a basic feasible solution, there must be exactly $n$ linearly independent tight (active) constraints.
+
+From the formulation of $LP(S)$, we have the following constraints that can be tight:
+\begin{enumerate}
+    \item $x_j = 1$ for $j \in S$ (exactly $|S|$ constraints)
+    \item $x_j = 0$ for $j \in I \setminus (S \cup \text{Good}(S))$ (exactly $n - |S| - |\text{Good}(S)|$ constraints)
+    \item $x_j = 0$ or $x_j = 1$ for $j \in \text{Good}(S)$
+    \item $\sum_{j \in I} s_{ij} x_j \leq b_i$ for $i \in \{1, \ldots, d\}$ (at most $d$ constraints)
+\end{enumerate}
+
+Let $k$ be the number of variables $x_j$ for $j \in \text{Good}(S)$ that are tight at their bounds (i.e., $x_j = 0$ or $x_j = 1$).
+Since a basic feasible solution is determined by $n$ linearly independent tight constraints, we must have:
+\[ |S| + (n - |S| - |\text{Good}(S)|) + k + (\text{number of tight capacity constraints}) \geq n \]
+This simplifies to:
+\[ n - |\text{Good}(S)| + k + (\text{number of tight capacity constraints}) \geq n \]
+\[ k \geq |\text{Good}(S)| - (\text{number of tight capacity constraints}) \]
+
+Since there are only $d$ capacity constraints in total, the number of tight capacity constraints is at most $d$. Thus:
+\[ k \geq |\text{Good}(S)| - d \]
+
+This means that out of the $|\text{Good}(S)|$ variables in $\text{Good}(S)$, at least $|\text{Good}(S)| - d$ of them are fixed to $0$ or $1$. The remaining variables are the only ones that can be strictly fractional ($0 < x_j < 1$).
+Therefore, the number of fractional variables is at most:
+\[ |F| = |\text{Good}(S)| - k \leq |\text{Good}(S)| - (|\text{Good}(S)| - d) = d \]
+Therefore, $|F| \leq d$.
