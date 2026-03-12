@@ -68,3 +68,76 @@ The reduction runs in polynomial time (constructing the metric takes $O(m^2)$ ti
 \end{proof}
 
 \subsection*{K approximation algorithm for the taxi problem}
+\textbf{Algorithm.} the idea for greedy algorithm for the general case is the following. the time for a taxi with the passengers list $\{a_1, \ldots, a_m\}$ is the TSP approximation of the path for the sources, then the shortest path from the last source to the first destination, then the TSP approximation of the path for the destinations. at each iteration, we assign the next passenger such that the increase in the completion time of all the taxis is minimal. we repeat until all passengers are assigned.
+
+here is the algorithm for the single taxi case ($B=1$):
+\begin{algorithm}
+\caption{4-Approximation for Single Taxi ($B=1$)}
+\begin{algorithmic}[1]
+\Procedure{SingleTaxiSchedule}{$G, t, \{(s_1, d_1), \ldots, (s_n, d_n)\}$}
+    \State $S \gets \{s_1, \ldots, s_n\}$
+    \State $D \gets \{d_1, \ldots, d_n\}$
+
+    \State \textbf{Phase 1: Collect all passengers}
+    \State $Path_S \gets \text{ChristofidesPath}(S, t)$
+    \State $s_{last} \gets \text{last vertex in } Path_S$
+
+    \State \textbf{Phase 2: Transition}
+    \State $d_{first} \gets \text{Find } d_i \in D \text{ that minimizes } t(s_{last}, d_i)$
+
+    \State \textbf{Phase 3: Deliver all passengers}
+    \State $Path_D \gets \text{ChristofidesPath}(D, t, \text{start}=d_{first})$
+
+    \State \Return $Path_S \oplus Path_D$ \Comment{Concatenate the two paths}
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+
+\textbf{Complexity.} The algorithm runs in polynomial time, since Christofides' algorithm runs in polynomial time, and finding the minimum $t(s_{last}, d_i)$ takes $O(n)$ time.
+
+
+\textbf{Approximation Analysis.}
+
+\begin{claim}
+The greedy algorithm is a 4-approximation algorithm for the single taxi problem ($B=1$).
+\end{claim}
+
+\begin{proof}
+Let $OPT$ be the optimal maximum completion time (makespan) for a single taxi to deliver all passengers. Let $S = \{s_1, \dots, s_n\}$ be the set of all source vertices and $D = \{d_1, \dots, d_n\}$ be the set of all destination vertices.
+
+\noindent\textbf{1. Lower Bounds on OPT:}\\
+Any valid optimal schedule must visit all vertices in $S$ to pick up the passengers, and it must visit all vertices in $D$ to drop them off. Because the travel times $t$ form a metric (satisfying the triangle inequality), shortcutting any intermediate vertices can only decrease the total path length. Therefore, we can establish the following lower bounds:
+\begin{itemize}
+\item \textbf{Lower Bounds 1 \& 2 (Sources and Destinations):} The optimal schedule contains a path that visits all vertices in $S$ and all vertices in $D$. Thus, the shortest paths covering all sources and destinations, denoted $OPT_{path}(S)$ and $OPT_{path}(D)$, are both lower bounds on $OPT$:
+$$OPT \geq OPT_{path}(S) \quad \text{and} \quad OPT \geq OPT_{path}(D)$$
+    \item \textbf{Lower Bound 3 (Max Edge):} The optimal schedule must visit every node in $S \cup D$. By the triangle inequality, the distance between \emph{any} two nodes in $S \cup D$ is at most the length of the optimal path. We have: $OPT \geq t(s_{last}, d_{first})$
+\end{itemize}
+
+\noindent\textbf{2. Upper Bound on the Algorithm's Cost:}\\
+The proposed algorithm constructs a schedule in three sequential phases:
+\begin{enumerate}
+    \item A TSP path covering $S$.
+    \item A single transit edge from $s_{last}$ to $d_{first}$.
+    \item A TSP path covering $D$.
+\end{enumerate}
+
+Let $ALG$ be the total completion time of this algorithm. The cost is the sum of the three phases:
+$$ALG = Cost(Path_S) + t(s_{last}, d_{first}) + Cost(Path_D)$$
+
+We are assuming the use of Christofides' algorithm adapted for the Shortest Hamiltonian Path problem with free endpoints. This algorithm guarantees a $1.5$-approximation for the optimal path. Therefore:
+\begin{itemize}
+    \item $Cost(Path_S) \leq 1.5 \cdot OPT_{path}(S)$
+    \item $Cost(Path_D) \leq 1.5 \cdot OPT_{path}(D)$
+\end{itemize}
+
+\noindent\textbf{3. Combining Bounds:}\\
+Substitute the approximations and the lower bounds into the algorithm's cost equation:
+$$ALG \leq 1.5 \cdot OPT_{path}(S) + t(s_{last}, d_{first}) + 1.5 \cdot OPT_{path}(D)$$
+
+Using our lower bounds ($OPT_{path}(S) \leq OPT$, $t(s_{last}, d_{first}) \leq OPT$, and $OPT_{path}(D) \leq OPT$):
+$$ALG \leq 1.5 \cdot OPT + 1 \cdot OPT + 1.5 \cdot OPT$$
+$$ALG \leq 4 \cdot OPT$$
+
+Thus, the proposed greedy algorithm is a \textbf{4-approximation algorithm} for the single taxi problem.
+\end{proof}
