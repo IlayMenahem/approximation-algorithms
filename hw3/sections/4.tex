@@ -21,10 +21,10 @@ solution of value at most $(1 + \eps)\text{OPT} + c$, where OPT is
 the value of an optimal solution. Suggest an APTAS for Bin Packing with Trees.
 
 \subsection*{The algorithm}
-\textbf{Solution outline} - First we will divide the items into large and small ones, the large ones into intervals of sizes, and we will round the sizes of the items in each interval to the maximum size in the interval. Then we will use the Karmarkar-Karp algorithm to get an APTAS for the abstracted sizes, we will resolve the conflicts, and at last we will add the small items to the bins.
+\textbf{Solution outline} - First we will divide the items into large and small ones, the large ones into intervals of sizes, and we will round the sizes of the items in each interval to the maximum size in the interval. Then we will use the standard APTAS to get an APTAS for the abstracted sizes, we will resolve the conflicts, and at last we will add the small items to the bins.
 
 \subsubsection*{Conflict resolution}
-Now we will describe a conflict resolution algorithm for a tree conflict graph. The input $AbstractedBins$ is the solution produced by Karmarkar-Karp on the rounded instance: a list of bins, where each bin is a multiset of abstracted sizes (one slot per large item assigned to it). The goal is to assign each real item $i \in Large$ to a slot whose abstracted size equals $i$'s abstracted size, such that no two adjacent items share a bin.
+Now we will describe a conflict resolution algorithm for a tree conflict graph. The input $AbstractedBins$ is the solution produced by standard APTAS on the rounded instance: a list of bins, where each bin is a multiset of abstracted sizes (one slot per large item assigned to it). The goal is to assign each real item $i \in Large$ to a slot whose abstracted size equals $i$'s abstracted size, such that no two adjacent items share a bin.
 
 The idea is to order the vertices so that at most one neighbor precedes each vertex. Given such an order, we greedily assign each vertex to an available slot of its abstracted size in a bin that contains no already-assigned neighbor. If no such bin exists, we open a new bin.
 
@@ -166,8 +166,8 @@ Finally, we will describe the APTAS for Bin Packing with Trees.
     \State $Groups \gets \{G_1, G_2, \ldots, G_m\}$ where $G_j = \{i \in Large \mid s_i \in ((j-1)\eps^2, j\eps^2]\}$
     \State for each $j \in [m]$ and $i \in G_j$, set $s_i \gets \max_{i' \in G_j} s_{i'}$
 
-    % solve the problem for the large items without taking into account the conflicts
-    \State $Bins \gets$ KarmarkarKarp($Large, s$)
+    % get an APTAS for the abstracted sizes
+    \State $Bins \gets$ standard APTAS($Large, \eps$)
 
     % resolve the conflicts
     \State $Bins \gets$ ConflictResolution($Bins, T$)
@@ -189,17 +189,9 @@ By the previous claims, each step of the algorithm maintains feasibility. The \t
 \end{proof}
 
 \subsection*{Running time analysis}
+The algorithm's running time is dominated by the conflict resolution and small item packing steps, both of which take $O(n^2)$ time as analyzed earlier. The initial step of categorizing and rounding the items takes $O(n)$ time. The standard APTAS runs in polynomial time if $\eps$ is constant. Therefore, the overall running time of the algorithm is polynomial in $n$ for any fixed $\eps$.
 
 \subsection*{Approximation ratio analysis}
-\begin{claim}
-Karmarkar-Karp algorithm returns a solution of value at most $(1 + \eps)\text{OPT} + c$ for the abstracted sizes.
-\end{claim}
-
-\begin{proof}
-
-\end{proof}
-
-
 \begin{claim}
 For a given $\eps > 0$, the algorithm returns a packing into at most $(1 + \eps)\text{OPT} + c$ bins.
 \end{claim}
