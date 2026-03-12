@@ -4,21 +4,22 @@ include a complete and formal solution. The level is expected to be similar
 to the level of other questions in this assignment. Extremely well written and
 elegant question may receive a bonus.
 
-\subsection*{The question - The bus network problem}
-Let $G = (V, E)$ be a directed graph, B the number of buses, a metric
-$t: V \times V \to \mathbb{R}_+$, and a set of $n$ passengers, where
-each passenger $i$ is a tuple of the form $(s_i, d_i, t_i)$, where $s_i$ is the
-source vertex, $d_i$ is the destination vertex, and $t_i$ is the time at which
-the passenger wants to arrive at the destination. The bus network problem is
-to find a schedule for the buses, such that each bus starts at some vertex at
-time 0, and travels along a path in the graph, and each passenger can pick any
-bus that passes through $s_i$ at some time and arrives at $d_i$ at time before
-$t_i$. The objective is to minimize the total difference between the time the
-started at the source and the desired arrival time.
+\subsection*{The question - The taxi problem}
+Let $G = (V, E)$ be a complete graph. Let $t: V \times V \to \mathbb{R}_+$ be a metric representing the travel time between any two vertices. We are given an integer $B \geq 1$ representing the number of available taxis, and a set of $n$ passengers. Each passenger $i$ is defined by a tuple $(s_i, d_i) \in V \times V$, where $s_i$ is their source vertex and $d_i$ is their destination vertex.
 
-the busses have infinite capacity, their speed is 1.
+All $B$ taxis have infinite passenger capacity, travel at a constant speed of 1, and begin their routes at time $0$ from any chosen starting vertices in $V$. Once a passenger is picked up by a taxi at their source $s_i$, they must remain in that same taxi until they are dropped off at their destination $d_i$ (i.e., transfers between taxis are not allowed).
+
+A valid schedule defines the starting vertex and the sequence of visited vertices for each taxi over time such that every passenger $i$ is successfully transported from $s_i$ to $d_i$. Let $C_i$ denote the completion time (arrival time) of passenger $i$ at their destination $d_i$.
+
+The objective of the taxi problem is to find valid schedules for all $B$ taxis that minimize the sum of the completion times of all passengers:
+\[\min \sum_{i=1}^{n} C_i\]
 
 \subsection*{Notes and observations}
-it isn't necessarlly true that it is possible to find a schedule for the buses
-such that all passengers can arrive at their destination before their desired
-time. thus,
+\begin{itemize}
+    \item The problem is NP-hard, --- needs to be shown by reduction ---
+    \item If $t$ wasn't metric, the problem can't be approximated with any k factor, --- needs to be shown by reduction ---
+    \item If $B \geq n$, the problem can be solved in polynomial time by sending each passenger in a separate taxi.
+    \item $G$ doesn't have to be complete, only connected, since we can replace any missing edge with a path of length equal to the shortest path between its endpoints which can be computed in polynomial time.
+\end{itemize}
+
+\subsection*{K approximation algorithm for the taxi problem}
