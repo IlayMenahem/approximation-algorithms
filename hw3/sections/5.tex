@@ -11,15 +11,60 @@ All $B$ taxis have infinite passenger capacity, travel at a constant speed of 1,
 
 A valid schedule defines the starting vertex and the sequence of visited vertices for each taxi over time such that every passenger $i$ is successfully transported from $s_i$ to $d_i$. Let $C_i$ denote the completion time (arrival time) of passenger $i$ at their destination $d_i$.
 
-The objective of the taxi problem is to find valid schedules for all $B$ taxis that minimize the sum of the completion times of all passengers:
-\[\min \sum_{i=1}^{n} C_i\]
+find valid schedules for all $B$ taxis that minimize the maximum completion time among all passengers: $\max_{i} C_i$.
 
-\subsection*{Notes and observations}
+Show that this problem is NP-hard, and show a $k$-approximation algorithm for the problem for $B=1$.
+
+\subsection*{NP-hardness}
+
+\begin{theorem}
+The taxi problem is NP-hard, even for a single taxi ($B = 1$).
+\end{theorem}
+
+\begin{proof}
+We show that the taxi problem is NP-hard even for a single taxi ($B = 1$), by reduction from the \textbf{Hamiltonian Path Problem}.
+
+\medskip
+\noindent\textbf{Reduction.}
+Given an instance $H = (V_H, E_H)$ of Hamiltonian Path, we construct a taxi instance as follows.
+
 \begin{itemize}
-    \item The problem is NP-hard, --- needs to be shown by reduction ---
-    \item If $t$ wasn't metric, the problem can't be approximated with any k factor, --- needs to be shown by reduction ---
-    \item If $B \geq n$, the problem can be solved in polynomial time by sending each passenger in a separate taxi.
-    \item $G$ doesn't have to be complete, only connected, since we can replace any missing edge with a path of length equal to the shortest path between its endpoints which can be computed in polynomial time.
+    \item \textbf{Vertices.} Let $V = V_H \cup \{d^*\}$, where $d^*$ is a fresh depot vertex not in $V_H$.
+
+    \item \textbf{Metric.} Define the travel time $t$ as the shortest-path distance in the complete graph where:
+    \begin{itemize}
+        \item For $u, v \in V_H$: if $(u,v) \in E_H$, set $w(u,v) = 1$; otherwise $w(u,v) = 2$.
+        \item For $v \in V_H$: set $w(v, d^*) = m^2$.
+    \end{itemize}
+    Then define $t(u,v)$ as the shortest-path distance under $w$. Since shortest-path distances satisfy the triangle inequality, $t$ is a valid metric, and it is computable in polynomial time.
+
+    Note that for $u,v \in V_H$: $t(u,v) = 1$ if $(u,v) \in E_H$, and $t(u,v) = 2$ otherwise (the direct weight of $2$ is at most any two-hop path of cost $\geq 2$).
+
+    \item \textbf{Taxis.} $B = 1$.
+
+    \item \textbf{Passengers.} For each vertex $v_i \in V_H$, create a passenger with source $s_i = v_i$ and destination $d_i = d^*$.
+
+    \item \textbf{Threshold.} $T = (m - 1) + m^2$.
 \end{itemize}
+
+\noindent\textbf{Correctness.}
+
+In any valid schedule, the single taxi must visit every source $v_i \in V_H$ to pick up all $m$ passengers, and then reach $d^*$ to drop them off. Since the taxi has infinite capacity, the optimal strategy is to first tour all of $V_H$ (picking up everyone), and then travel to $d^*$ (dropping everyone off). The makespan equals
+\[
+    C_{\max} = (\text{length of path through all vertices of } V_H) + t(v_{\text{last}}, d^*),
+\]
+where $v_{\text{last}}$ is the last vertex of $V_H$ visited. Since $t(v, d^*) = m^2$ for every $v \in V_H$, this simplifies to
+\[
+    C_{\max} = (\text{length of path through all vertices of } V_H) + m^2.
+\]
+
+\begin{itemize}
+    \item[$(\Rightarrow)$] If $H$ has a Hamiltonian path $v_{\pi(1)}, v_{\pi(2)}, \ldots, v_{\pi(m)}$, the taxi starts at $v_{\pi(1)}$ and follows this path. Each edge has $t$-cost $1$ (since consecutive vertices are adjacent in $H$), so the path has total length $m - 1$. The end time is $(m-1) + m^2 = T$.
+
+    \item[$(\Leftarrow)$] Suppose there is a valid schedule with $\leq T = (m-1) + m^2$. The taxi visits all $m$ vertices of $V_H$ in some order, traversing $m - 1$ edges, then travels to $d^*$ at cost $m^2$. The total path length through $V_H$ must be $\leq m - 1$. Since each step between consecutive visited vertices costs at least $1$ (as $t(u,v) \geq 1$ for all $u \neq v$ in $V_H$), and there are exactly $m - 1$ steps, each step must cost exactly $1$. By construction, $t(u,v) = 1$ if and only if $(u,v) \in E_H$. Therefore the sequence of visited vertices forms a Hamiltonian path in $H$.
+\end{itemize}
+
+The reduction runs in polynomial time (constructing the metric takes $O(m^2)$ time). Since the Hamiltonian Path Problem is NP-complete, the taxi problem (even with $B=1$) is NP-hard.
+\end{proof}
 
 \subsection*{K approximation algorithm for the taxi problem}
