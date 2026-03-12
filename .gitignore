@@ -5,3 +5,4 @@
 *.fls
 *.synctex.gz
 .DS_Store
+*.dvi
